@@ -34,6 +34,13 @@ Finish The First Reserve to earn three signals. Later refinery deliveries earn o
 
 The prototype banner rolls a 10% base chance of S-rank, with S-rank guaranteed on the fifth pull since the last S-rank. An S-rank roll is 50/50 Nim or Mira. After a Mira result, the next S-rank is guaranteed Nim. Duplicate recruits give a fragment, and two fragments automatically make another signal. The save keeps the guarantee, collection and active assignment. Signals are earned through play. S-ranks get a dedicated reveal showing a 50/50 win, a loss with the next featured guarantee, or a guarantee used. Skip animation goes directly to the result, as does the reduced-motion setting.
 
+The industrial Relay and Nim's in-colony sprite use Tripo Studio GLB exports rendered as transparent PNGs in Blender. Assigned Nim appears on the colony map. To render from the source exports, run these commands and use the printed ground anchors in `frontier/client/world.ts`.
+
+```sh
+blender --background --python-exit-code 1 --python scripts/render-city-sprite.py -- emberwell-relay-noir.glb frontier/client/city/frontier-relay.png --size 64 --azimuth 135
+blender --background --python-exit-code 1 --python scripts/render-city-sprite.py -- emberwell-nim-pilot.glb frontier/client/city/nim.png --size 24 --azimuth -115
+```
+
 ## Local NKS checkout
 
 Use npm run dev:market to start the same game with a local Anvil market. Import the local-only `playerKey` from data/market-local/market.json into a dedicated development wallet. It starts with 10 test NKS and development gas. Keep the file private and use that key only on the local development chain. The shop requests wallet access when the player clicks `Buy Duskwear`. The first purchase may request an allowance for the exact price and a second confirmation for the payment. Confirmed purchases cost 1 test NKS and leave the city’s SPICE untouched. Keep data/market-local and data/frontier.sqlite together for a restorable local environment.

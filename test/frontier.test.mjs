@@ -203,6 +203,11 @@ test('browser plays without a wallet and pays NKS only at checkout', { timeout: 
     await expect(page.getByRole('heading', { name: 'Emberwell' })).toBeVisible();
     await expect(page.locator('canvas')).toBeVisible();
     await screen('03-colony');
+    const city = await page.locator('canvas').boundingBox();
+    assert.ok(city);
+    await page.locator('canvas').click({ position: { x: city.width * 416 / 480, y: city.height * 119 / 270 } });
+    await expect(page.locator('#panel-title')).toHaveText('Relay');
+    await screen('16-city-relay');
     await button('Market').click();
     await button('Open market').click();
     await expect(page.locator('#outfit-preview')).toHaveAttribute('src', /female-dusk/);
@@ -364,7 +369,12 @@ test('browser plays without a wallet and pays NKS only at checkout', { timeout: 
     await screen('14-s-rank-reveal');
     await button('Continue').click();
     await expect(page.locator('#pull-reveal')).toBeHidden();
+    await button('Nim').click();
+    const assignNim = button('Assign specialist');
+    if (await assignNim.isEnabled()) await assignNim.click();
+    await expect(page.locator('#crew-benefit')).toContainText('Assigned.');
     await button('Close').click();
+    await screen('17-nim-city');
     await page.setViewportSize({ width: 390, height: 844 });
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await button('Relay').click();

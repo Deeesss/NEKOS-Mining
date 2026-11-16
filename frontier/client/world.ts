@@ -1,4 +1,6 @@
 import Phaser from 'phaser';
+import relaySprite from './city/frontier-relay.png?no-inline';
+import nimSprite from './city/nim.png?no-inline';
 import type { Colony, Place, View } from './types';
 
 type Point = { x: number; y: number };
@@ -24,13 +26,22 @@ class FrontierScene extends Phaser.Scene {
   now = Date.now;
   private layer?: Phaser.GameObjects.Graphics;
   private vehicles?: Phaser.GameObjects.Graphics;
+  private relay?: Phaser.GameObjects.Image;
+  private nim?: Phaser.GameObjects.Image;
   private down?: Point;
   private dragged = false;
 
   constructor(private pick: (place: Place) => void) { super('frontier'); }
 
+  preload() {
+    this.load.image('frontier-relay', relaySprite);
+    this.load.image('nim-city', nimSprite);
+  }
+
   create() {
     this.layer = this.add.graphics();
+    this.relay = this.add.image(spots.relay.x, spots.relay.y, 'frontier-relay').setOrigin(.5, .6965);
+    this.nim = this.add.image(261, 143, 'nim-city').setOrigin(.5, .8515);
     this.vehicles = this.add.graphics();
     this.cameras.main.setBounds(-95, -63, 670, 396);
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
@@ -90,6 +101,8 @@ class FrontierScene extends Phaser.Scene {
     const g = this.layer;
     if (!g) return;
     g.clear();
+    this.relay?.setVisible(this.view === 'city');
+    this.nim?.setVisible(this.view === 'city' && this.state?.crew.active === 'nim');
     if (this.view === 'desert') this.drawDesert(g);
     else this.drawCity(g);
     g.lineStyle(1, 0xffda98, 1).strokePoints(diamond(spots[this.place], this.place === 'silo' ? 39 : 36, 18), true);
@@ -141,12 +154,7 @@ class FrontierScene extends Phaser.Scene {
     ], true);
     g.fillStyle(0xffd48a).fillRect(spots.market.x + 3, spots.market.y - 3, 9, 3);
 
-    const relay = spots.relay;
-    this.box(g, relay, 18, 14, 0x666690, [0x504963, 0x37364a]);
-    g.fillStyle(0xc7b5e6).fillRect(relay.x - 1, relay.y - 40, 2, 26);
-    g.lineStyle(2, 0xe2b7ff).strokePoints([point(relay.x - 10, relay.y - 37),
-      point(relay.x, relay.y - 32), point(relay.x + 11, relay.y - 38)]);
-    g.fillStyle(0xb3e8da).fillRect(relay.x - 3, relay.y - 43, 6, 3);
+    g.fillStyle(0x362a2a, .7).fillEllipse(spots.relay.x + 5, spots.relay.y + 6, 39, 18);
 
     this.box(g, spots.command, 32, 24, 0x788d85, [0x514d43, 0x34484b]);
     this.box(g, point(spots.command.x - 5, spots.command.y - 20), 13, 10, 0xa2a89a, [0x716b55, 0x445450]);
@@ -178,8 +186,8 @@ class FrontierScene extends Phaser.Scene {
     g.fillStyle(coat).fillRect(239, 128, 6, 5);
     g.fillStyle(0x352b29).fillRect(240, 133, 4, 4);
     const crew = this.state?.crew.active;
-    if (crew) {
-      const colors = { nim: 0x2b8bfc, varren: 0xd43843, mira: 0x9269db };
+    if (crew && crew !== 'nim') {
+      const colors = { varren: 0xd43843, mira: 0x9269db };
       g.fillStyle(colors[crew]).fillRect(258, 133, 6, 6);
       g.fillStyle(0xf1b086).fillRect(259, 129, 4, 4);
       g.fillStyle(crew === 'mira' ? 0xd2a86b : colors[crew])
@@ -246,6 +254,7 @@ export function mountWorld(pick: (place: Place) => void) {
   new Phaser.Game({
     type: Phaser.CANVAS, width: 480, height: 270, pixelArt: true, antialias: false, audio: { noAudio: true },
     backgroundColor: '#654b3c', scene, parent: 'world-canvas',
+    loader: { imageLoadType: 'HTMLImageElement' },
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH }
   });
   return scene;
