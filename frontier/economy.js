@@ -3,8 +3,7 @@ export const rules = Object.freeze({
   rawCapacity: 1000,
   refineSeconds: 10,
   yieldPercent: 70,
-  target: 500,
-  duskwearPrice: 100
+  target: 500
 });
 
 export class GameError extends Error {
@@ -19,7 +18,7 @@ const upgradeCost = level => 150 + 100 * (level - 1);
 const seconds = n => n * 1000;
 
 export function createColony(protagonist, name) {
-  return { protagonist, name, outfit: 'field', ownsDuskwear: false, revision: 0, mission: 'briefing', raw: 0, refined: 0, delivered: 0, level: 1, flight: null, batch: null };
+  return { protagonist, name, outfit: 'field', ownsDuskwear: false, marketVersion: 2, refundPending: 0, revision: 0, mission: 'briefing', raw: 0, refined: 0, delivered: 0, level: 1, flight: null, batch: null };
 }
 
 export function settle(colony, now, record) {
@@ -82,14 +81,6 @@ export function command(colony, action, now, record) {
       record('silo_upgraded', now, 0, -cost);
       return;
     }
-    case 'buy-dusk':
-      if (colony.ownsDuskwear) throw new GameError('Duskwear is already in your wardrobe.');
-      if (colony.mission !== 'complete') throw new GameError('Complete The First Reserve to buy Duskwear.');
-      if (colony.refined < rules.duskwearPrice) throw new GameError('The silo needs more REFINED SPICE to buy Duskwear.');
-      colony.refined -= rules.duskwearPrice;
-      colony.ownsDuskwear = true;
-      record('duskwear_purchased', now, 0, -rules.duskwearPrice);
-      return;
     case 'field':
     case 'dusk':
       if (action === 'dusk' && !colony.ownsDuskwear) throw new GameError('Buy Duskwear from the Market first.');
@@ -97,6 +88,15 @@ export function command(colony, action, now, record) {
       return;
     default:
       throw new GameError('Unknown colony command.', 404);
+  }
+}
+
+export function settleRefund(colony, now, record) {
+  const refund = Math.min(colony.refundPending, siloCapacity(colony.level) - colony.refined);
+  if (refund > 0) {
+    colony.refundPending -= refund;
+    colony.refined += refund;
+    record('duskwear_refunded', now, 0, refund);
   }
 }
 

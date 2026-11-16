@@ -8,7 +8,7 @@
 **Repozitár:** [https://github.com/Deeesss/NEKOS-Mining](https://github.com/Deeesss/NEKOS-Mining)\
 **Pracovná vetva:** `feat/nks-rebirth`
 
-**Spresnenie etapy 1:** Emberwell je kolóniové RPG. Po dodávke 500 čistého SPICE môže hráč investovať zásoby do rozšírenia sila. Samostatný Market ponúkne náhľad a predaj Duskwear pre oboch protagonistov za 100 čistého SPICE po prvej misii. Hráč si zakúpený outfit oblečie v záložke Wardrobe v Markete. Profil funguje bez peňaženky. Obchod za internú menu patrí do etapy 2. Existujúci Web3 prototyp sa spúšťa samostatne. Base Sepolia ostáva etapou 3.
+**Spresnenie etapy 1:** Emberwell je kolóniové RPG. Po dodávke 500 čistého SPICE môže hráč investovať zásoby do rozšírenia sila. Samostatný Market ponúkne náhľad a predaj Duskwear pre oboch protagonistov za test NKS po prvej misii. Peňaženku hra vyžiada až pri kúpe. Čistý SPICE financuje rast mesta. Hráč si zakúpený outfit oblečie v záložke Wardrobe v Markete. Profil funguje bez peňaženky. Obchod za internú menu patrí do etapy 2. Lokálne overenie predaja používa Anvil. Base Sepolia ostáva etapou 3.
 
 ---
 
@@ -480,7 +480,7 @@ Výšku cien, produkčných nákladov a ekonomických kurzov určuj ako konfigur
 - Rozširovať skladovanie.
 - Odomykať ďalšie expedície.
 
-Prvá etapa používa priamu investíciu čistého SPICE do zvýšenia kapacity sila. Market v prvej etape predáva Duskwear za čistý SPICE. Všeobecný obchod so surovinami za internú menu patrí do etapy 2.
+Prvá etapa používa priamu investíciu čistého SPICE do zvýšenia kapacity sila. Market v prvej etape testuje predaj Duskwear za 1 test NKS na lokálnom reťazci. Všeobecný obchod so surovinami za internú menu patrí do etapy 2.
 
 Pokročilý dynamický trh, kontrakty medzi hráčmi a burza patria do ďalších etáp.
 

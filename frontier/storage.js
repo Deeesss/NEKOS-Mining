@@ -2,7 +2,8 @@ import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { createHash, randomBytes } from 'node:crypto';
-import { command, createColony, GameError, settle, snapshot } from './economy.js';
+import { command, createColony, GameError, settle, settleRefund, snapshot } from './economy.js';
+import { orderIdFor } from './market.js';
 
 const digest = value => createHash('sha256').update(value).digest('hex');
 
@@ -52,6 +53,27 @@ export function openColonyStore(path) {
   const save = db.prepare('UPDATE colonies SET state = ? WHERE id = ?');
   const add = db.prepare('INSERT INTO inventory_events(colony, kind, occurred_at, raw_delta, refined_delta) VALUES (?, ?, ?, ?, ?)');
 
+  function loadColony(row, now) {
+    const colony = JSON.parse(row.state);
+    const record = (...event) => add.run(row.id, ...event);
+    if (colony.marketVersion !== 2) {
+      colony.ownsDuskwear ??= colony.level >= 2;
+      const { spent } = db.prepare(
+        "SELECT COALESCE(SUM(-refined_delta), 0) AS spent FROM inventory_events WHERE colony = ? AND kind = 'duskwear_purchased'"
+      ).get(row.id);
+      colony.refundPending = spent;
+      colony.marketVersion = 2;
+    }
+    settleRefund(colony, now, record);
+    settle(colony, now, record);
+    return { colony, record };
+  }
+
+  function write(row, colony) {
+    const serialized = JSON.stringify(colony);
+    if (serialized !== row.state) save.run(serialized, row.id);
+  }
+
   return {
     close: () => db.close(),
     create(token, protagonist, name, now) {
@@ -64,24 +86,43 @@ export function openColonyStore(path) {
         return { session, state: snapshot(state, now) };
       });
     },
-    update(token, now, request) {
+    pending(token) {
+      const row = token && lookup.get(digest(token));
+      const state = row && JSON.parse(row.state);
+      if (!state?.paymentMarket || state.ownsDuskwear) return null;
+      return { id: orderIdFor(row.id), market: state.paymentMarket };
+    },
+    issue(token, now, market) {
+      return atomic(() => {
+        const row = token && lookup.get(digest(token));
+        if (!row) return null;
+        const { colony } = loadColony(row, now);
+        if (colony.ownsDuskwear) throw new GameError('Duskwear is already in your wardrobe.');
+        if (colony.mission !== 'complete') throw new GameError('Complete The First Reserve to buy Duskwear.');
+        if (colony.paymentMarket && colony.paymentMarket !== market) throw new GameError('The order belongs to another market deployment.');
+        colony.paymentMarket = market;
+        write(row, colony);
+        return orderIdFor(row.id);
+      });
+    },
+    update(token, now, request, paidOrder) {
       if (!token) return null;
       return atomic(() => {
         const row = lookup.get(digest(token));
         if (!row) return null;
-        const colony = JSON.parse(row.state);
-        // Older saves unlocked Duskwear at level two.
-        colony.ownsDuskwear ??= colony.level >= 2;
-        const record = (...event) => add.run(row.id, ...event);
-        settle(colony, now, record);
+        const { colony, record } = loadColony(row, now);
+        if (paidOrder && !colony.ownsDuskwear && paidOrder.id === orderIdFor(row.id) && paidOrder.market === colony.paymentMarket) {
+          colony.ownsDuskwear = true;
+          colony.revision++;
+        }
         if (request) {
           if (request.revision !== colony.revision) throw new GameError('This colony changed. The latest state is being loaded.');
           command(colony, request.action, now, record);
           colony.revision++;
+          settleRefund(colony, now, record);
           settle(colony, now, record);
         }
-        const serialized = JSON.stringify(colony);
-        if (serialized !== row.state) save.run(serialized, row.id);
+        write(row, colony);
         return snapshot(colony, now);
       });
     }

@@ -1,6 +1,7 @@
 import './style.css';
 import type { mountWorld } from './world';
 import { conversation } from './story';
+import { buyFromMarket, type Checkout } from './checkout';
 import type { Action, Colony, Outfit, Place, View } from './types';
 import male from './portraits/male.webp';
 import female from './portraits/female.webp';
@@ -41,7 +42,7 @@ el<HTMLImageElement>('npc-portrait').src = iona;
 const gameTime = () => state ? state.now + performance.now() - receivedAt : Date.now();
 const secondsLeft = (time: number) => Math.max(0, Math.ceil((time - gameTime()) / 1_000));
 
-async function request(path = '', body?: object): Promise<Colony | null> {
+async function request<T = Colony>(path = '', body?: object): Promise<T | null> {
   const response = await fetch('/api/frontier' + path, {
     ...(body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {}),
     signal: AbortSignal.timeout(8_000)
@@ -58,6 +59,7 @@ function receive(next: Colony | null) {
   if (next && before && (next.revision < before.revision || next.now < before.now)) return;
   state = next;
   receivedAt = performance.now();
+  if (before && next?.ownsDuskwear && !before.ownsDuskwear) label('market-feedback', 'Payment confirmed. Duskwear is in your wardrobe.');
   if (before && next && before.flight && !next.flight) label('feedback', 'Harvester returned. RAW SPICE is ready at the refinery.');
   if (before && next && before.delivered < next.delivered) label('feedback', `${int(next.delivered - before.delivered)} REFINED SPICE delivered to the silo.`);
 }
@@ -143,8 +145,8 @@ function panel(colony: Colony) {
       actions = [{ name: report ? 'Report to Commander Iona' : 'Talk to Commander Iona', run: openConversation, enabled: can }];
       break;
     case 'market':
-      description = 'Trade REFINED SPICE for clothing made in Emberwell.';
-      detail = colony.ownsDuskwear ? 'Duskwear in your wardrobe' : `Duskwear · ${int(colony.rules.duskwearPrice)} REFINED SPICE`;
+      description = 'Preview clothing made in Emberwell. The shop accepts test NKS.';
+      detail = colony.ownsDuskwear ? 'Duskwear in your wardrobe' : (colony.market ? `Duskwear · ${colony.market.price} NKS` : 'Duskwear · NKS checkout unavailable');
       actions = [{ name: 'Open market', run: openMarket }];
       break;
     case 'hangar':
@@ -220,6 +222,7 @@ function render() {
   label('raw', int(colony.raw));
   label('refined', int(colony.refined) + ' / ' + int(colony.capacity));
   label('silo-level', colony.level);
+  if (colony.refundPending > 0) label('feedback', `${int(colony.refundPending)} refunded SPICE is waiting for space in your silo.`);
   label('objective', int(Math.min(colony.rules.target, colony.delivered)) + ' / ' + int(colony.rules.target));
   const places: Place[] = view === 'city' ? ['command', 'hangar', 'refinery', 'silo', 'market'] : ['deposit'];
   buttons('places', places.map(key => ({ name: locations[key], run: () => setPlace(key) })));
@@ -246,17 +249,18 @@ function renderMarket() {
   if (!state) return;
   const owned = state.ownsDuskwear;
   const shop = marketView === 'shop';
-  const cost = state.rules.duskwearPrice;
+  const market = state.market;
   el<HTMLImageElement>('outfit-preview').src = portraits[state.protagonist][shop ? 'dusk' : state.outfit];
   pressed('market-shop', shop);
   pressed('market-wardrobe', !shop);
   show('shop-panel', shop);
   show('wardrobe-panel', !shop);
-  label('shop-detail', owned ? 'Already in your wardrobe.' :
-    `${int(cost)} REFINED SPICE · ${state.mission === 'complete' ? int(state.refined) + ' in your silo' : 'Available after The First Reserve'}`);
+  label('shop-detail', owned ? 'Already in your wardrobe.' : !market ? 'Test NKS checkout is unavailable.' :
+    `${market.price} NKS · ${market.name} · ${state.mission === 'complete' ? 'Wallet required to buy' : 'Available after The First Reserve'}`);
+  label('buy-dusk', state.payment === 'finalizing' ? 'Confirming payment…' : 'Buy Duskwear');
   label('wardrobe-detail', owned ? 'Choose what to wear around Emberwell.' : 'Buy Duskwear from the shop to add it here.');
   show('buy-dusk', !owned);
-  el<HTMLButtonElement>('buy-dusk').disabled = busy || !online || state.mission !== 'complete' || state.refined < cost;
+  el<HTMLButtonElement>('buy-dusk').disabled = busy || !online || !market || !!state.payment || state.mission !== 'complete';
   el<HTMLButtonElement>('field-outfit').disabled = busy || !online;
   el<HTMLButtonElement>('dusk-outfit').disabled = busy || !online || !owned;
   pressed('field-outfit', state.outfit === 'field');
@@ -280,7 +284,6 @@ async function order(action: Action) {
     const next = await request('/command', { action, revision: state.revision, site: state.rules.site.id });
     receive(next);
     if (action === 'upgrade') label(status, 'Silo capacity expanded.');
-    if (action === 'buy-dusk') label(status, 'Duskwear added to your wardrobe.');
     if (action === 'report') label('feedback', 'Mission complete. Colony upgrades unlocked.');
     return true;
   } catch (error) {
@@ -324,7 +327,26 @@ el('market-close').onclick = () => el<HTMLDialogElement>('market-dialog').close(
 el('market-shop').onclick = () => { marketView = 'shop'; renderMarket(); };
 el('market-wardrobe').onclick = () => { marketView = 'wardrobe'; renderMarket(); };
 el('buy-dusk').onclick = async () => {
-  if (await order('buy-dusk')) el('market-wardrobe').focus();
+  const market = state?.market;
+  if (!market || busy || state?.ownsDuskwear) return;
+  busy = true;
+  label('market-feedback', 'Connect the wallet you want to pay with.');
+  render();
+  try {
+    await buyFromMarket(market, async buyer => {
+      const checkout = await request<Checkout>('/purchase', { buyer, chainId: market.chainId });
+      if (!checkout) throw new Error('Could not start checkout.');
+      return checkout;
+    }, message => label('market-feedback', message));
+    label('market-feedback', 'Payment mined. Waiting for chain confirmation.');
+  } catch (error) {
+    label('market-feedback', (error as { code?: number }).code === 4001 ? 'Wallet request declined.' :
+      error instanceof Error ? error.message : 'Could not complete checkout.');
+  } finally {
+    busy = false;
+    await refresh();
+    if (state?.ownsDuskwear) el('market-wardrobe').focus();
+  }
 };
 async function equip(outfit: Outfit) {
   if (state?.outfit !== outfit && await order(outfit)) renderMarket();

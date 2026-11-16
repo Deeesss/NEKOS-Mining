@@ -9,7 +9,11 @@ import { DatabaseSync } from 'node:sqlite';
 import { setTimeout as delay } from 'node:timers/promises';
 import { test } from 'node:test';
 import { chromium, expect } from '@playwright/test';
+import { Contract, parseEther } from 'ethers';
 import { createFrontier } from '../frontier.js';
+import { connectMarket } from '../frontier/market.js';
+import { deployLocalMarket } from '../scripts/deploy-market.mjs';
+import { fundedWallet, startDevChain } from '../scripts/dev-chain.mjs';
 
 async function freePort() {
   const server = createServer();
@@ -50,7 +54,7 @@ test('frontier inventory and guest authorization survive retries and full storag
     assert.equal((await fetch(api)).status, 204);
     assert.equal((await send('dispatch')).status, 409);
     assert.equal((await send('dusk')).status, 409);
-    assert.equal((await send('buy-dusk')).status, 409);
+    assert.equal((await send('buy-dusk')).status, 404);
     assert.equal((await send('accept')).status, 200);
     const revision = (await state()).revision;
     const dispatches = await Promise.all([send('dispatch', revision), send('dispatch', revision)]);
@@ -80,27 +84,27 @@ test('frontier inventory and guest authorization survive retries and full storag
     assert.equal(upgraded.delivered, 1400);
     assert.equal(upgraded.batch, null);
     assert.equal((await send('dusk')).status, 409);
-    assert.equal((await send('buy-dusk', upgraded.revision)).status, 200);
-    assert.equal((await send('buy-dusk', upgraded.revision)).status, 409);
-    assert.equal((await send('buy-dusk')).status, 409);
-    const purchased = await state();
-    assert.equal(purchased.ownsDuskwear, true);
-    assert.equal(purchased.refined, 1150);
-    assert.equal(purchased.outfit, 'field');
-    assert.equal((await send('dusk')).status, 200);
-    assert.equal((await state()).outfit, 'dusk');
+    assert.equal((await post('/purchase', {})).status, 503);
     const check = new DatabaseSync(databasePath);
     try {
-      check.exec("UPDATE colonies SET state = json_remove(state, '$.ownsDuskwear')");
+      check.exec(`
+        UPDATE colonies SET state = json_remove(
+          json_set(state, '$.refined', 1150, '$.ownsDuskwear', json('true'), '$.outfit', 'dusk'), '$.marketVersion'
+        );
+        INSERT INTO inventory_events(colony, kind, occurred_at, raw_delta, refined_delta)
+          SELECT id, 'duskwear_purchased', 1900000000000, 0, -100 FROM colonies;
+      `);
       const oldSave = await state();
       assert.equal(oldSave.ownsDuskwear, true);
       assert.equal(oldSave.outfit, 'dusk');
-      assert.equal(oldSave.refined, 1150);
+      assert.equal(oldSave.refined, 1250);
+      assert.equal((await state()).refined, 1250);
       const rows = check.prepare('SELECT kind, raw_delta, refined_delta FROM inventory_events ORDER BY id').all();
       assert.equal(rows.filter(row => row.kind === 'harvester_unloaded').length, 2);
       assert.equal(rows.filter(row => row.kind === 'silo_delivered').length, 2);
       assert.equal(rows.filter(row => row.kind === 'duskwear_purchased').length, 1);
-      assert.equal(rows.reduce((total, row) => total + row.refined_delta, 0), purchased.refined);
+      assert.equal(rows.filter(row => row.kind === 'duskwear_refunded').length, 1);
+      assert.equal(rows.reduce((total, row) => total + row.refined_delta, 0), oldSave.refined);
       assert.equal(rows.reduce((total, row) => total + row.raw_delta, 0), upgraded.raw);
     } finally {
       check.close();
@@ -115,7 +119,7 @@ test('frontier inventory and guest authorization survive retries and full storag
   }
 });
 
-test('browser plays The First Reserve without a wallet and keeps its wardrobe after restart', { timeout: 85_000 }, async () => {
+test('browser plays without a wallet and pays NKS only at checkout', { timeout: 85_000 }, async () => {
   const dir = mkdtempSync(join(tmpdir(), 'nks-browser-'));
   const databasePath = join(dir, 'game.sqlite');
   const port = await freePort();
@@ -124,17 +128,20 @@ test('browser plays The First Reserve without a wallet and keeps its wardrobe af
   const capture = process.env.NKS_FRONTIER_SCREENSHOTS;
   if (capture) mkdirSync(capture, { recursive: true });
   let now = 1_900_000_000_000;
-  let http, game, child, browser;
+  let http, game, child, browser, node, player, other, deployment, token;
   async function start() {
     if (!real) {
-      game = createFrontier({ origin, databasePath, clock: () => now });
+      game = createFrontier({ origin, databasePath, clock: () => now, market: await connectMarket(deployment) });
       http = await new Promise(resolve => {
         const server = game.app.listen(port, '127.0.0.1', () => resolve(server));
       });
       return;
     }
     child = spawn(process.execPath, ['frontier.js'], {
-      env: { ...process.env, FRONTIER_DATABASE: databasePath, FRONTIER_PORT: String(port), FRONTIER_ORIGIN: origin },
+      env: { ...process.env, FRONTIER_DATABASE: databasePath, FRONTIER_PORT: String(port), FRONTIER_ORIGIN: origin,
+        FRONTIER_MARKET_CHAIN_ID: '31337', FRONTIER_MARKET_RPC: deployment.rpcUrl, FRONTIER_MARKET_ADDRESS: deployment.address,
+        FRONTIER_MARKET_SIGNER_KEY: deployment.signerKey, FRONTIER_MARKET_TOKEN: deployment.expectedToken,
+        FRONTIER_MARKET_TREASURY: deployment.expectedTreasury },
       stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true
     });
     await new Promise((resolve, reject) => {
@@ -162,6 +169,13 @@ test('browser plays The First Reserve without a wallet and keeps its wardrobe af
   }
 
   try {
+    node = await startDevChain(await freePort());
+    player = await fundedWallet(node.provider);
+    other = await fundedWallet(node.provider);
+    const deployer = await fundedWallet(node.provider);
+    deployment = { ...await deployLocalMarket(deployer, player), rpcUrl: node.rpc };
+    token = new Contract(deployment.expectedToken,
+      ['function balanceOf(address) view returns (uint256)'], node.provider);
     await start();
     browser = await chromium.launch(process.env.NKS_BROWSER_CHANNEL ? { channel: process.env.NKS_BROWSER_CHANNEL } : {});
     const context = await browser.newContext({ viewport: { width: 1366, height: 900 } });
@@ -234,10 +248,55 @@ test('browser plays The First Reserve without a wallet and keeps its wardrobe af
     await expect(page.locator('#silo-level')).toHaveText('2');
     await button('Market').click();
     await button('Open market').click();
-    await expect(page.locator('#shop-detail')).toContainText('100 REFINED SPICE');
+    await expect(page.locator('#shop-detail')).toContainText('1.0 NKS');
     await screen('07-market');
+    assert.equal(await page.evaluate(() => 'ethereum' in window), false);
     await button('Buy Duskwear').click();
-    await expect(page.locator('#market-feedback')).toHaveText('Duskwear added to your wardrobe.');
+    await expect(page.locator('#market-feedback')).toContainText('Ethereum wallet');
+    let connects = 0;
+    let approvals = 0;
+    let rejectPayment = true;
+    let paidCall;
+    let paidHash;
+    await page.exposeFunction('testWallet', async ({ method, params }) => {
+      if (method === 'eth_requestAccounts') { connects++; return [player.address]; }
+      if (method === 'eth_accounts') return [player.address];
+      if (method === 'eth_chainId') return '0x7a69';
+      if (method === 'eth_getTransactionReceipt') return node.provider.send(method, params);
+      if (method !== 'eth_sendTransaction') throw new Error('Unexpected wallet RPC ' + method);
+      const { to, data } = params[0];
+      if (to === deployment.expectedToken) approvals++;
+      if (to === deployment.address) {
+        if (rejectPayment) return { rejected: true };
+        paidCall = { to, data };
+        await assert.rejects(other.sendTransaction(paidCall));
+      }
+      const tx = await player.sendTransaction({ to, data });
+      if (to === deployment.address) paidHash = tx.hash;
+      return tx.hash;
+    });
+    await page.evaluate(() => {
+      window.ethereum = { async request(input) {
+        const result = await window.testWallet(input);
+        if (result?.rejected) throw Object.assign(new Error('Declined'), { code: 4001 });
+        return result;
+      } };
+    });
+    assert.equal(connects, 0);
+    await button('Buy Duskwear').click();
+    await expect(page.locator('#market-feedback')).toHaveText('Wallet request declined.');
+    assert.equal(await token.balanceOf(player.address), parseEther('10'));
+    assert.equal(await token.balanceOf(deployment.expectedTreasury), 0n);
+    rejectPayment = false;
+    await button('Buy Duskwear').click();
+    await expect(page.locator('#market-feedback')).toHaveText('Payment confirmed. Duskwear is in your wardrobe.');
+    assert.equal(connects, 2);
+    assert.equal(approvals, 1);
+    await assert.rejects(player.sendTransaction(paidCall));
+    assert.equal((await node.provider.getTransactionReceipt(paidHash)).status, 1);
+    assert.equal(await token.balanceOf(player.address), parseEther('9'));
+    assert.equal(await token.balanceOf(deployment.expectedTreasury), parseEther('1'));
+    console.log('Real local purchase receipt:', paidHash);
     await button('Wardrobe').click();
     await expect(button('Field uniform')).toHaveAttribute('aria-pressed', 'true');
     await button('Duskwear').click();
@@ -247,16 +306,17 @@ test('browser plays The First Reserve without a wallet and keeps its wardrobe af
     await button('Close').click();
     await page.reload();
     await expect(page.locator('#avatar')).toHaveAttribute('src', /female-dusk/);
-    await expect(page.locator('#refined')).toHaveText('450 / 1,600');
+    await expect(page.locator('#refined')).toHaveText('550 / 1,600');
     await expect(page.locator('#objective')).toHaveText('500 / 500');
     await page.setViewportSize({ width: 390, height: 844 });
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth), 390);
     await screen('09-mobile');
     assert.deepEqual(errors, []);
-    console.log(`Frontier mission delivered 700, spent 150 on storage and 100 on Duskwear, retained 450 and saved the outfit. ${real ? 'CLI and real timers' : 'isolated clock'} (${Math.round((Date.now() - startTime) / 1000)} wall seconds).`);
+    console.log(`Frontier mission delivered 700, spent 150 SPICE on storage, retained 550 SPICE after a 1 NKS payment, and saved the outfit. ${real ? 'CLI and real timers' : 'isolated clock'} (${Math.round((Date.now() - startTime) / 1000)} wall seconds).`);
   } finally {
     await browser?.close();
     await stop();
+    await node?.close();
     rmSync(dir, { recursive: true, force: true });
   }
 });

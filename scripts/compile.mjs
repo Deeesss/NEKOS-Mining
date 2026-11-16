@@ -4,7 +4,7 @@ import { pathToFileURL } from 'node:url';
 import solc from 'solc';
 
 export function compile() {
-  const names = ['NekosSpice', 'SpiceRewards'];
+  const names = ['NekosSpice', 'SpiceRewards', 'FrontierMarket'];
   const sources = Object.fromEntries(names.map(name => {
     const file = `contracts/${name}.sol`;
     return [file, { content: readFileSync(file, 'utf8') }];
@@ -39,5 +39,5 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   for (const [name, artifact] of Object.entries(compile())) {
     writeFileSync(`artifacts/${name}.json`, JSON.stringify(artifact, null, 2));
   }
-  console.log(`Compiled both contracts with ${solc.version()}`);
+  console.log(`Compiled the contracts with ${solc.version()}`);
 }

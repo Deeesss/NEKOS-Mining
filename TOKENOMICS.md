@@ -15,3 +15,7 @@
 Spice points are server-side game progress. NKS is the transferable test token received after claiming on-chain. The contract has no post-deployment mint. The distribution pool and single-use signed claims limit payouts. The test rules allow multiple wallets per person.
 
 Production supply, issuance, reward rates, anti-abuse rules, sale, liquidity and economic design remain undecided.
+
+## Frontier Market test
+
+The local Frontier market charges 1 test NKS for Duskwear. The token transfer goes to the configured development treasury. A signed order is specific to the buyer, the chain, the market and the guest colony's purchase. The outfit becomes available after the contract records payment. REFINED SPICE remains a city resource and has no automatic conversion to NKS.

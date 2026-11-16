@@ -17,7 +17,8 @@
     "test": "npm run build && node --test test/*.test.mjs",
     "build": "tsc --noEmit && vite build",
     "dev:wallet": "node scripts/local.mjs",
-    "start:wallet": "node --env-file-if-exists=.env server.js"
+    "start:wallet": "node --env-file-if-exists=.env server.js",
+    "dev:market": "npm run build && node scripts/frontier-local.mjs"
   },
   "dependencies": {
     "ethers": "6.17.0",

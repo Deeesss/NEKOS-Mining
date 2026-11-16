@@ -1,4 +1,6 @@
 import express from 'express';
+import { getAddress } from 'ethers';
+import { marketFromEnv } from './frontier/market.js';
 import helmet from 'helmet';
 import { rateLimit } from 'express-rate-limit';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -10,7 +12,7 @@ const dist = fileURLToPath(new URL('./dist/', import.meta.url));
 const cookie = 'nks_frontier';
 const secureCookie = '__Host-nks_frontier';
 
-export function createFrontier({ origin, databasePath, clock = Date.now }) {
+export function createFrontier({ origin, databasePath, clock = Date.now, market = null }) {
   const secure = origin.startsWith('https://');
   const cookieName = secure ? secureCookie : cookie;
   const cookies = { httpOnly: true, secure, sameSite: 'strict', path: '/', maxAge: 365 * 24 * 60 * 60 * 1000 };
@@ -40,9 +42,47 @@ export function createFrontier({ origin, databasePath, clock = Date.now }) {
   });
   app.use(prefix, limited(240), express.json({ limit: '4kb' }));
 
-  app.get(prefix, (req, res) => {
-    const state = store.update(token(req), clock());
-    return state ? res.json(state) : res.status(204).end();
+  const present = ({ paymentMarket, marketVersion, ...state }, payment = null) =>
+    ({ ...state, market: market?.config ?? null, payment });
+
+  app.get(prefix, async (req, res) => {
+    const guest = token(req);
+    const pending = store.pending(guest);
+    let paid = null;
+    let payment = null;
+    if (pending && pending.market === market?.identity) {
+      try {
+        if (await market.buyer(pending.id)) paid = pending;
+        else if (market.config.chainId !== 31337 && await market.buyer(pending.id, false)) payment = 'finalizing';
+      } catch {
+        payment = 'unavailable';
+      }
+    } else if (pending) {
+      payment = 'unavailable';
+    }
+    const state = store.update(guest, clock(), null, paid);
+    return state ? res.json(present(state, payment)) : res.status(204).end();
+  });
+
+  app.post(prefix + '/purchase', limited(15), async (req, res) => {
+    if (!market) throw new GameError('The test NKS market is unavailable.', 503);
+    let buyer;
+    try { buyer = getAddress(req.body?.buyer); }
+    catch { throw new GameError('Select an Ethereum wallet account.', 400); }
+    if (req.body.chainId !== market.config.chainId) throw new GameError('Switch your wallet to the market network.', 400);
+    const guest = token(req);
+    const order = store.issue(guest, clock(), market.identity);
+    if (!order) throw new GameError('Your colony session could not be restored.', 401);
+    try {
+      if (await market.buyer(order, false)) throw new GameError('Payment is already on-chain. Wait for the wardrobe to update.');
+      res.json({ ...await market.quote(order, buyer), chainId: market.config.chainId });
+    } catch (error) {
+      if (error instanceof GameError) throw error;
+      if (error.message === 'This wallet does not have enough test NKS.' || error.message === 'Choose a player wallet.') {
+        throw new GameError(error.message);
+      }
+      throw new GameError('The chain is temporarily unavailable. Try again shortly.', 503);
+    }
   });
 
   app.post(prefix + '/colony', limited(12), (req, res) => {
@@ -53,7 +93,7 @@ export function createFrontier({ origin, databasePath, clock = Date.now }) {
       throw new GameError('Enter a name of up to 24 characters.', 400);
     }
     const { session, state } = store.create(token(req), protagonist, cleanName, clock());
-    res.cookie(cookieName, session, cookies).status(201).json(state);
+    res.cookie(cookieName, session, cookies).status(201).json(present(state));
   });
 
   app.post(prefix + '/command', limited(60), (req, res) => {
@@ -64,20 +104,21 @@ export function createFrontier({ origin, databasePath, clock = Date.now }) {
     }
     const state = store.update(token(req), clock(), { action, revision });
     if (!state) throw new GameError('Your colony session could not be restored.', 401);
-    res.json(state);
+    res.json(present(state));
   });
 
   app.use('/api', (_req, res) => res.status(404).json({ error: 'Unknown colony endpoint.' }));
   app.use(express.static(dist, { dotfiles: 'deny' }));
   app.use((error, _req, res, _next) => {
+    if (error instanceof GameError) return res.status(error.status).json({ error: error.message });
     if (error.status >= 400 && error.status < 500) {
-      return res.status(error.status).json({ error: error instanceof GameError ? error.message : 'Invalid request.' });
+      return res.status(error.status).json({ error: 'Invalid request.' });
     }
     console.error('Frontier operation failed.', error.code ?? error.name);
     res.status(500).json({ error: 'The colony service is temporarily unavailable.' });
   });
 
-  return { app, close: () => store.close() };
+  return { app, close() { store.close(); market?.close(); } };
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
@@ -90,7 +131,10 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
       throw new Error('FRONTIER_ORIGIN must be an HTTPS origin or loopback HTTP origin.');
     }
     if (!existsSync(new URL('./dist/index.html', import.meta.url))) throw new Error('Run npm run build before starting Frontier.');
-    const game = createFrontier({ origin: origin.origin, databasePath: process.env.FRONTIER_DATABASE || 'data/frontier.sqlite' });
+    let market = null;
+    try { market = await marketFromEnv(); }
+    catch (error) { console.error('NKS checkout unavailable.', error.code ?? error.name); }
+    const game = createFrontier({ origin: origin.origin, databasePath: process.env.FRONTIER_DATABASE || 'data/frontier.sqlite', market });
     const server = game.app.listen(port, '127.0.0.1', () => console.log(`NEKOS: Spice Frontier at ${origin.origin}`));
     server.once('error', error => {
       game.close();

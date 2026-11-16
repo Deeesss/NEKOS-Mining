@@ -1,8 +1,10 @@
+import type { MarketNetwork } from './checkout';
+
 export type Place = 'command' | 'hangar' | 'refinery' | 'silo' | 'market' | 'deposit';
 export type View = 'city' | 'desert';
 export type Protagonist = 'male' | 'female';
 export type Outfit = 'field' | 'dusk';
-export type Action = 'accept' | 'dispatch' | 'refine' | 'report' | 'upgrade' | 'field' | 'dusk' | 'buy-dusk';
+export type Action = 'accept' | 'dispatch' | 'refine' | 'report' | 'upgrade' | 'field' | 'dusk';
 
 export interface Flight {
   launchedAt: number;
@@ -16,6 +18,9 @@ export interface Colony {
   protagonist: Protagonist;
   outfit: Outfit;
   ownsDuskwear: boolean;
+  market: MarketNetwork | null;
+  payment: 'finalizing' | 'unavailable' | null;
+  refundPending: number;
   name: string;
   revision: number;
   mission: 'briefing' | 'active' | 'complete';
@@ -34,6 +39,5 @@ export interface Colony {
     refineSeconds: number;
     yieldPercent: number;
     target: number;
-    duskwearPrice: number;
   };
 }
