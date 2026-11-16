@@ -324,6 +324,16 @@ test('browser plays without a wallet and pays NKS only at checkout', { timeout: 
     await button('Open relay').click();
     await expect(page.locator('#crew-name')).toHaveText(recruit);
     await expect(page.locator('#crew-benefit')).toContainText('Assigned.');
+    const portrait = page.locator('#crew-portrait');
+    const backdrop = await portrait.evaluate(img => getComputedStyle(img).backgroundImage);
+    assert.match(backdrop, /relay-backdrop/);
+    for (const [name, asset] of [['Nim', 'nim'], ['Varren', 'varren'], ['Mira Vesper', 'mira']]) {
+      await button(name).click();
+      await expect(portrait).toHaveAttribute('src', new RegExp(asset + '-'));
+      await portrait.evaluate(img => img.decode());
+      assert.equal(await portrait.evaluate(img => getComputedStyle(img).backgroundImage), backdrop);
+      await screen('11-relay-' + asset);
+    }
     await button('Close').click();
     await page.setViewportSize({ width: 390, height: 844 });
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth), 390);

@@ -107,5 +107,8 @@ dialog img { width: 100%; height: clamp(14rem, 67vh, 36rem); object-fit: cover; 
 #crew-roster { display: flex; flex-wrap: wrap; gap: .35rem; }
 #crew-odds { font-size: .9rem; color: var(--dim); }
 #crew-result { min-height: 1.45rem; color: var(--mint); }
-#crew-portrait { object-fit: contain; background: #171719; }
+#crew-portrait {
+  object-fit: contain;
+  background: #292728 url('./portraits/relay-backdrop.webp') center / cover no-repeat;
+}
 #crew-dialog[data-rank="S"] { border-color: #b6a6e2; }
