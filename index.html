@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="/frontier/client/icon.svg" type="image/svg+xml">
+  <title>NEKOS: Spice Frontier</title>
+  <meta name="description" content="Dispatch harvesters, refine SPICE, and build up a desert colony.">
+</head>
+<body>
+  <header class="top">
+    <div class="masthead"><span>NEKOS</span><strong>Spice Frontier</strong></div>
+    <div id="operator" class="operator" hidden><img id="avatar" width="42" height="42" alt=""><span id="operator-name"></span></div>
+  </header>
+  <main>
+    <p id="startup" role="status">Opening colony…</p>
+    <section id="setup" hidden aria-labelledby="setup-title">
+      <div class="intro">
+        <h1 id="setup-title">Choose your steward</h1>
+        <p>A settlement at the edge of the Glass Basin needs a new steward. Who takes command?</p>
+      </div>
+      <form id="create">
+        <fieldset class="portraits">
+          <legend class="sr-only">Protagonist</legend>
+          <label class="portrait"><input type="radio" name="protagonist" value="male" checked><img id="select-male" alt=""><span>Male steward</span></label>
+          <label class="portrait"><input type="radio" name="protagonist" value="female"><img id="select-female" alt=""><span>Female steward</span></label>
+        </fieldset>
+        <div class="name-entry">
+          <label for="steward-name">Steward name</label>
+          <input id="steward-name" name="name" type="text" required maxlength="24" autocomplete="off" placeholder="Enter a name">
+          <button class="primary" type="submit">Enter the colony</button>
+        </div>
+      </form>
+    </section>
+
+    <section id="play" aria-labelledby="colony-title" hidden>
+      <div class="play-heading">
+        <div><h1 id="colony-title">Emberwell</h1><p id="mission-summary"></p></div>
+        <nav aria-label="World view"><button id="city" aria-pressed="true">Colony</button><button id="desert" aria-pressed="false">Desert map</button></nav>
+      </div>
+      <div class="game-layout">
+        <div class="world">
+          <div id="world-canvas" aria-label="Illustrated colony and desert map"></div>
+          <div class="world-controls" aria-label="Map camera">
+            <button id="zoom-out" aria-label="Zoom out">−</button><button id="zoom-in" aria-label="Zoom in">+</button><button id="reset-view">Reset view</button>
+          </div>
+          <div id="places" class="places" aria-label="Select a location"></div>
+        </div>
+        <aside class="orders" aria-labelledby="panel-title">
+          <h2 id="panel-title"></h2>
+          <p id="panel-description"></p>
+          <div id="panel-detail"></div>
+          <progress id="activity-progress" aria-label="Operation progress" max="100" hidden></progress>
+          <div id="panel-actions"></div>
+        </aside>
+      </div>
+      <dl class="stocks">
+        <div><dt>RAW SPICE</dt><dd id="raw">0</dd></div>
+        <div><dt>REFINED SPICE in silo</dt><dd id="refined">0</dd></div>
+        <div><dt>Silo level</dt><dd id="silo-level">1</dd></div>
+        <div><dt>First delivery</dt><dd id="objective">0 / 500</dd></div>
+      </dl>
+    </section>
+    <p id="feedback" role="status" aria-live="polite"></p>
+    <button id="retry" hidden>Retry connection</button>
+  </main>
+
+  <dialog id="conversation" aria-labelledby="speaker">
+    <img id="npc-portrait" alt="">
+    <div class="dialogue">
+      <h2 id="speaker">Commander Iona</h2>
+      <p id="dialogue-line"></p>
+      <div class="dialogue-actions"><button id="dialogue-next" class="primary">Continue</button><button id="dialogue-close">Close</button></div>
+    </div>
+  </dialog>
+
+  <dialog id="market-dialog" aria-labelledby="market-title">
+    <img id="outfit-preview" alt="">
+    <div class="dialogue market">
+      <h2 id="market-title">Emberwell Market</h2>
+      <nav aria-label="Market view"><button id="market-shop" aria-pressed="true">Shop</button><button id="market-wardrobe" aria-pressed="false">Wardrobe</button></nav>
+      <div id="shop-panel">
+        <h3>Duskwear</h3>
+        <p id="shop-detail"></p>
+        <button id="buy-dusk" class="primary">Buy Duskwear</button>
+      </div>
+      <div id="wardrobe-panel" hidden>
+        <p id="wardrobe-detail"></p>
+        <div class="dialogue-actions"><button id="field-outfit">Field uniform</button><button id="dusk-outfit">Duskwear</button></div>
+      </div>
+      <p id="market-feedback" role="status"></p>
+      <button id="market-close">Close</button>
+    </div>
+  </dialog>
+  <dialog id="crew-dialog" aria-labelledby="crew-title">
+    <img id="crew-portrait" alt="">
+    <div class="dialogue crew">
+      <h2 id="crew-title">Frontier Relay</h2>
+      <p id="crew-signals"></p>
+      <p id="crew-odds"></p>
+      <div id="crew-roster" aria-label="Specialists"></div>
+      <h3 id="crew-name"></h3>
+      <p id="crew-benefit"></p>
+      <p id="crew-result" role="status"></p>
+      <div class="dialogue-actions">
+        <button id="crew-scan" class="primary">Recruit · 1 signal</button>
+        <button id="crew-assign">Assign specialist</button>
+        <button id="crew-close">Close</button>
+      </div>
+    </div>
+  </dialog>
+  <script type="module" src="/frontier/client/main.ts"></script>
+</body>
+</html>
