@@ -92,6 +92,23 @@
       <button id="market-close">Close</button>
     </div>
   </dialog>
+  <dialog id="crew-dialog" aria-labelledby="crew-title">
+    <img id="crew-portrait" alt="">
+    <div class="dialogue crew">
+      <h2 id="crew-title">Frontier Relay</h2>
+      <p id="crew-signals"></p>
+      <p id="crew-odds"></p>
+      <div id="crew-roster" aria-label="Specialists"></div>
+      <h3 id="crew-name"></h3>
+      <p id="crew-benefit"></p>
+      <p id="crew-result" role="status"></p>
+      <div class="dialogue-actions">
+        <button id="crew-scan" class="primary">Recruit · 1 signal</button>
+        <button id="crew-assign">Assign specialist</button>
+        <button id="crew-close">Close</button>
+      </div>
+    </div>
+  </dialog>
   <script type="module" src="/frontier/client/main.ts"></script>
 </body>
 </html>

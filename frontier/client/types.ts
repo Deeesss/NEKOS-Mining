@@ -1,10 +1,10 @@
 import type { MarketNetwork } from './checkout';
 
-export type Place = 'command' | 'hangar' | 'refinery' | 'silo' | 'market' | 'deposit';
+export type Place = 'command' | 'hangar' | 'refinery' | 'silo' | 'market' | 'relay' | 'deposit';
 export type View = 'city' | 'desert';
 export type Protagonist = 'male' | 'female';
 export type Outfit = 'field' | 'dusk';
-export type Action = 'accept' | 'dispatch' | 'refine' | 'report' | 'upgrade' | 'field' | 'dusk';
+export type Action = 'accept' | 'dispatch' | 'refine' | 'report' | 'upgrade' | 'recruit' | 'assign-crew' | 'field' | 'dusk';
 
 export interface Flight {
   launchedAt: number;
@@ -14,7 +14,27 @@ export interface Flight {
   raw: number;
 }
 
+export type CrewId = 'nim' | 'varren' | 'mira';
+export interface Recruit {
+  id: CrewId;
+  name: string;
+  rank: 'A' | 'S';
+  role: string;
+  benefit: string;
+}
+
 export interface Colony {
+  crew: {
+    tickets: number;
+    fragments: number;
+    misses: number;
+    guaranteed: boolean;
+    owned: CrewId[];
+    active: CrewId | null;
+    last: { recruit: CrewId; duplicate: boolean } | null;
+  };
+  crewEffects: { travel: number; yield: number; refining: number };
+  recruitment: { sRate: number; hardPity: number; featured: CrewId; roster: Recruit[] };
   protagonist: Protagonist;
   outfit: Outfit;
   ownsDuskwear: boolean;

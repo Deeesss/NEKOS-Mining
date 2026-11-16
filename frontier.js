@@ -97,12 +97,12 @@ export function createFrontier({ origin, databasePath, clock = Date.now, market 
   });
 
   app.post(prefix + '/command', limited(60), (req, res) => {
-    const { action, revision, site } = req.body ?? {};
+    const { action, revision, site, recruit } = req.body ?? {};
     if (typeof action !== 'string' || !Number.isSafeInteger(revision) ||
         (action === 'dispatch' && site !== 'glass-basin')) {
       throw new GameError('Invalid colony order.', 400);
     }
-    const state = store.update(token(req), clock(), { action, revision });
+    const state = store.update(token(req), clock(), { action, revision, recruit });
     if (!state) throw new GameError('Your colony session could not be restored.', 401);
     res.json(present(state));
   });

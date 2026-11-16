@@ -24,6 +24,16 @@ Phaser renders both maps. Drag to pan and use the camera buttons to zoom or rese
 
 Use `npm run build` to create `dist/` and `npm start` to serve an existing build. The server listens on loopback. See `.env.example` for the port, database path and origin settings.
 
+## Frontier Relay
+
+Finish The First Reserve to earn three signals. Later refinery deliveries earn one each. Open **Relay → Open relay** to preview the roster, spend one signal on a recruit and assign one specialist at a time.
+
+- **Nim · S-rank featured** shortens each leg of a future expedition by two seconds.
+- **Mira Vesper · S-rank standard** shortens future refinery batches from ten seconds to six.
+- **Varren · A-rank** improves future refinery yield from 70% to 75%.
+
+The prototype banner rolls a 10% base chance of S-rank, with S-rank guaranteed on the fifth pull since the last S-rank. An S-rank roll is 50/50 Nim or Mira. After a Mira result, the next S-rank is guaranteed Nim. Duplicate recruits give a fragment, and two fragments automatically make another signal. The save keeps the guarantee, collection and active assignment. Signals are earned through play.
+
 ## Local NKS checkout
 
 Use npm run dev:market to start the same game with a local Anvil market. Import the local-only `playerKey` from data/market-local/market.json into a dedicated development wallet. It starts with 10 test NKS and development gas. Keep the file private and use that key only on the local development chain. The shop requests wallet access when the player clicks `Buy Duskwear`. The first purchase may request an allowance for the exact price and a second confirmation for the payment. Confirmed purchases cost 1 test NKS and leave the city’s SPICE untouched. Keep data/market-local and data/frontier.sqlite together for a restorable local environment.

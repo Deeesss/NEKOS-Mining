@@ -3,6 +3,7 @@ import { dirname } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { createHash, randomBytes } from 'node:crypto';
 import { command, createColony, GameError, settle, settleRefund, snapshot } from './economy.js';
+import { newCrew } from './recruitment.js';
 import { orderIdFor } from './market.js';
 
 const digest = value => createHash('sha256').update(value).digest('hex');
@@ -64,6 +65,7 @@ export function openColonyStore(path) {
       colony.refundPending = spent;
       colony.marketVersion = 2;
     }
+    colony.crew ??= newCrew(colony.mission === 'complete' ? 3 : 0);
     settleRefund(colony, now, record);
     settle(colony, now, record);
     return { colony, record };
@@ -117,7 +119,7 @@ export function openColonyStore(path) {
         }
         if (request) {
           if (request.revision !== colony.revision) throw new GameError('This colony changed. The latest state is being loaded.');
-          command(colony, request.action, now, record);
+          command(colony, request, now, record);
           colony.revision++;
           settleRefund(colony, now, record);
           settle(colony, now, record);

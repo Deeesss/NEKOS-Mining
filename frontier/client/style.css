@@ -101,3 +101,11 @@ dialog img { width: 100%; height: clamp(14rem, 67vh, 36rem); object-fit: cover; 
 .market h3 { margin: 0; }
 .market p { margin-block: .5rem .65rem; }
 #market-feedback { color: var(--hot); min-height: 1.45rem; }
+
+.crew h3 { font-size: 1.25rem; margin: .8rem 0 .15rem; }
+.crew p { margin-block: .45rem .6rem; }
+#crew-roster { display: flex; flex-wrap: wrap; gap: .35rem; }
+#crew-odds { font-size: .9rem; color: var(--dim); }
+#crew-result { min-height: 1.45rem; color: var(--mint); }
+#crew-portrait { object-fit: contain; background: #171719; }
+#crew-dialog[data-rank="S"] { border-color: #b6a6e2; }

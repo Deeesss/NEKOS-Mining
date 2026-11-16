@@ -7,7 +7,7 @@ const iso = (column: number, row: number) => point(240 + (column - row) * 22, 13
 const blend = (a: Point, b: Point, n: number) => point(Math.round(a.x + (b.x - a.x) * n), Math.round(a.y + (b.y - a.y) * n));
 const progress = (now: number, start: number, end: number) => Phaser.Math.Clamp((now - start) / (end - start), 0, 1);
 const spots = {
-  command: iso(-3, -2), hangar: iso(-2, 2), refinery: iso(3, -2), silo: iso(2, 3), market: iso(-5, 0), deposit: point(369, 104)
+  command: iso(-3, -2), hangar: iso(-2, 2), refinery: iso(3, -2), silo: iso(2, 3), market: iso(-5, 0), relay: iso(4, -4), deposit: point(369, 104)
 };
 const camp = point(100, 201);
 const bend = point(252, 152);
@@ -50,7 +50,7 @@ class FrontierScene extends Phaser.Scene {
       if (this.dragged || !this.down) return;
       this.down = undefined;
       const p = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
-      const places: Place[] = this.view === 'city' ? ['command', 'hangar', 'refinery', 'silo', 'market'] : ['deposit'];
+      const places: Place[] = this.view === 'city' ? ['command', 'hangar', 'refinery', 'silo', 'market', 'relay'] : ['deposit'];
       const found = places.find(place => Math.abs(spots[place].x - p.x) < 37 &&
         p.y > spots[place].y - 41 && p.y < spots[place].y + 18);
       if (found) this.pick(found);
@@ -129,7 +129,7 @@ class FrontierScene extends Phaser.Scene {
       }
     }
 
-    for (const p of [iso(-5, -3), iso(4, -4), iso(5, 0), iso(5, 2)]) {
+    for (const p of [iso(-5, -3), iso(5, 0), iso(5, 2)]) {
       this.box(g, p, 16, 9, 0x957d68, [0x625249, 0x463d39]);
       g.fillStyle(0xc4a885).fillRect(p.x - 5, p.y - 12, 10, 2);
     }
@@ -140,6 +140,13 @@ class FrontierScene extends Phaser.Scene {
       point(spots.market.x - 9, spots.market.y - 9), point(spots.market.x - 15, spots.market.y - 14)
     ], true);
     g.fillStyle(0xffd48a).fillRect(spots.market.x + 3, spots.market.y - 3, 9, 3);
+
+    const relay = spots.relay;
+    this.box(g, relay, 18, 14, 0x666690, [0x504963, 0x37364a]);
+    g.fillStyle(0xc7b5e6).fillRect(relay.x - 1, relay.y - 40, 2, 26);
+    g.lineStyle(2, 0xe2b7ff).strokePoints([point(relay.x - 10, relay.y - 37),
+      point(relay.x, relay.y - 32), point(relay.x + 11, relay.y - 38)]);
+    g.fillStyle(0xb3e8da).fillRect(relay.x - 3, relay.y - 43, 6, 3);
 
     this.box(g, spots.command, 32, 24, 0x788d85, [0x514d43, 0x34484b]);
     this.box(g, point(spots.command.x - 5, spots.command.y - 20), 13, 10, 0xa2a89a, [0x716b55, 0x445450]);
@@ -170,6 +177,15 @@ class FrontierScene extends Phaser.Scene {
     g.fillStyle(0xf1b086).fillRect(240, 125, 4, 3);
     g.fillStyle(coat).fillRect(239, 128, 6, 5);
     g.fillStyle(0x352b29).fillRect(240, 133, 4, 4);
+    const crew = this.state?.crew.active;
+    if (crew) {
+      const colors = { nim: 0x2b8bfc, varren: 0xd43843, mira: 0x9269db };
+      g.fillStyle(colors[crew]).fillRect(258, 133, 6, 6);
+      g.fillStyle(0xf1b086).fillRect(259, 129, 4, 4);
+      g.fillStyle(crew === 'mira' ? 0xd2a86b : colors[crew])
+        .fillRect(257, 127, 2, 4).fillRect(263, 126, 2, 5);
+      g.fillStyle(0x352b29).fillRect(259, 139, 4, 4);
+    }
   }
 
   private drawDesert(g: Phaser.GameObjects.Graphics) {

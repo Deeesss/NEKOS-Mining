@@ -1,3 +1,5 @@
+import { crewBonus, drawRecruit, newCrew, recruitment } from './recruitment.js';
+
 export const rules = Object.freeze({
   site: { id: 'glass-basin', name: 'Glass Basin', outbound: 8, extraction: 12, inbound: 8, raw: 1000 },
   rawCapacity: 1000,
@@ -18,7 +20,7 @@ const upgradeCost = level => 150 + 100 * (level - 1);
 const seconds = n => n * 1000;
 
 export function createColony(protagonist, name) {
-  return { protagonist, name, outfit: 'field', ownsDuskwear: false, marketVersion: 2, refundPending: 0, revision: 0, mission: 'briefing', raw: 0, refined: 0, delivered: 0, level: 1, flight: null, batch: null };
+  return { protagonist, name, outfit: 'field', ownsDuskwear: false, marketVersion: 2, refundPending: 0, revision: 0, mission: 'briefing', crew: newCrew(), raw: 0, refined: 0, delivered: 0, level: 1, flight: null, batch: null };
 }
 
 export function settle(colony, now, record) {
@@ -34,6 +36,7 @@ export function settle(colony, now, record) {
     } else if (colony.refined + colony.batch.output <= siloCapacity(colony.level)) {
       colony.refined += colony.batch.output;
       colony.delivered += colony.batch.output;
+      if (colony.mission === 'complete') colony.crew.tickets++;
       record('silo_delivered', colony.batch.blocked ? now : at, 0, colony.batch.output);
       colony.batch = null;
     } else {
@@ -42,7 +45,8 @@ export function settle(colony, now, record) {
   }
 }
 
-export function command(colony, action, now, record) {
+export function command(colony, { action, recruit }, now, record) {
+  const bonus = crewBonus(colony.crew.active);
   switch (action) {
     case 'accept':
       if (colony.mission !== 'briefing') throw new GameError('The water reserve mission has already started.');
@@ -52,18 +56,18 @@ export function command(colony, action, now, record) {
       if (colony.mission === 'briefing') throw new GameError('Speak to Commander Iona first.');
       if (colony.flight) throw new GameError('The harvester is already in the field.');
       if (colony.raw + rules.site.raw > rules.rawCapacity) throw new GameError('Refine the raw stock to clear space for another load.');
-      const arrivesAt = now + seconds(rules.site.outbound);
+      const arrivesAt = now + seconds(rules.site.outbound - bonus.travel);
       const departsAt = arrivesAt + seconds(rules.site.extraction);
-      colony.flight = { launchedAt: now, arrivesAt, departsAt, returnsAt: departsAt + seconds(rules.site.inbound), raw: rules.site.raw };
+      colony.flight = { launchedAt: now, arrivesAt, departsAt, returnsAt: departsAt + seconds(rules.site.inbound - bonus.travel), raw: rules.site.raw };
       return;
     }
     case 'refine': {
       if (colony.batch) throw new GameError('The refinery already has a batch.');
       if (!colony.raw) throw new GameError('Bring RAW SPICE back from the Glass Basin first.');
-      const output = Math.floor(colony.raw * rules.yieldPercent / 100);
+      const output = Math.floor(colony.raw * (rules.yieldPercent + bonus.yield) / 100);
       record('refinery_loaded', now, -colony.raw, 0);
       colony.raw = 0;
-      colony.batch = { startedAt: now, endsAt: now + seconds(rules.refineSeconds), output };
+      colony.batch = { startedAt: now, endsAt: now + seconds(rules.refineSeconds - bonus.refining), output };
       return;
     }
     case 'report':
@@ -71,6 +75,7 @@ export function command(colony, action, now, record) {
         throw new GameError('The mission needs 500 units delivered to the silo.');
       }
       colony.mission = 'complete';
+      colony.crew.tickets += 3;
       return;
     case 'upgrade': {
       if (colony.mission !== 'complete') throw new GameError('Report the first shipment to Commander Iona to unlock upgrades.');
@@ -81,6 +86,16 @@ export function command(colony, action, now, record) {
       record('silo_upgraded', now, 0, -cost);
       return;
     }
+    case 'recruit':
+      if (colony.mission !== 'complete') throw new GameError('Complete The First Reserve to activate the relay.');
+      if (!colony.crew.tickets) throw new GameError('Deliver another refinery batch to earn a signal.');
+      if (colony.crew.owned.length === recruitment.roster.length) throw new GameError('Everyone on this banner has joined your crew.');
+      drawRecruit(colony.crew);
+      return;
+    case 'assign-crew':
+      if (typeof recruit !== 'string' || !colony.crew.owned.includes(recruit)) throw new GameError('Recruit this specialist before assigning them.');
+      colony.crew.active = recruit;
+      return;
     case 'field':
     case 'dusk':
       if (action === 'dusk' && !colony.ownsDuskwear) throw new GameError('Buy Duskwear from the Market first.');
@@ -101,5 +116,5 @@ export function settleRefund(colony, now, record) {
 }
 
 export function snapshot(colony, now) {
-  return { ...colony, now, capacity: siloCapacity(colony.level), upgradeCost: upgradeCost(colony.level), rules };
+  return { ...colony, now, capacity: siloCapacity(colony.level), upgradeCost: upgradeCost(colony.level), rules, recruitment, crewEffects: crewBonus(colony.crew.active) };
 }
