@@ -17,7 +17,8 @@ export function newCrew(tickets = 0) {
 
 export function drawRecruit(crew, roll = randomInt) {
   const highRank = crew.misses + 1 >= recruitment.hardPity || roll(100) < recruitment.sRate;
-  const featured = highRank && (crew.guaranteed || roll(2) === 0);
+  const guaranteed = highRank && crew.guaranteed;
+  const featured = highRank && (guaranteed || roll(2) === 0);
   const recruit = highRank ? (featured ? 'nim' : 'mira') : 'varren';
   if (highRank) {
     crew.guaranteed = !featured;
@@ -35,7 +36,10 @@ export function drawRecruit(crew, roll = randomInt) {
       crew.fragments = 0;
     }
   }
-  crew.last = { recruit, duplicate };
+  let outcome = 'regular';
+  if (guaranteed) outcome = 'guaranteed';
+  else if (highRank) outcome = featured ? 'won' : 'lost';
+  crew.last = { recruit, duplicate, outcome };
 }
 
 export function crewBonus(active) {

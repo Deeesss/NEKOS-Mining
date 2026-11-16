@@ -32,7 +32,7 @@ Finish The First Reserve to earn three signals. Later refinery deliveries earn o
 - **Mira Vesper · S-rank standard** shortens future refinery batches from ten seconds to six.
 - **Varren · A-rank** improves future refinery yield from 70% to 75%.
 
-The prototype banner rolls a 10% base chance of S-rank, with S-rank guaranteed on the fifth pull since the last S-rank. An S-rank roll is 50/50 Nim or Mira. After a Mira result, the next S-rank is guaranteed Nim. Duplicate recruits give a fragment, and two fragments automatically make another signal. The save keeps the guarantee, collection and active assignment. Signals are earned through play.
+The prototype banner rolls a 10% base chance of S-rank, with S-rank guaranteed on the fifth pull since the last S-rank. An S-rank roll is 50/50 Nim or Mira. After a Mira result, the next S-rank is guaranteed Nim. Duplicate recruits give a fragment, and two fragments automatically make another signal. The save keeps the guarantee, collection and active assignment. Signals are earned through play. S-ranks get a dedicated reveal showing a 50/50 win, a loss with the next featured guarantee, or a guarantee used. Skip animation goes directly to the result, as does the reduced-motion setting.
 
 ## Local NKS checkout
 

@@ -15,6 +15,11 @@ export interface Flight {
 }
 
 export type CrewId = 'nim' | 'varren' | 'mira';
+export interface CrewPull {
+  recruit: CrewId;
+  duplicate: boolean;
+  outcome?: 'won' | 'lost' | 'guaranteed' | 'regular';
+}
 export interface Recruit {
   id: CrewId;
   name: string;
@@ -31,7 +36,7 @@ export interface Colony {
     guaranteed: boolean;
     owned: CrewId[];
     active: CrewId | null;
-    last: { recruit: CrewId; duplicate: boolean } | null;
+    last: CrewPull | null;
   };
   crewEffects: { travel: number; yield: number; refining: number };
   recruitment: { sRate: number; hardPity: number; featured: CrewId; roster: Recruit[] };

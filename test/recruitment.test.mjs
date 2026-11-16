@@ -15,6 +15,7 @@ test('five-pull pity reaches S-rank; losing 50/50 guarantees the next S-rank', (
   assert.equal(crew.tickets, 5);
   drawRecruit(crew, lose);
   assert.equal(crew.last.recruit, 'mira');
+  assert.equal(crew.last.outcome, 'lost');
   assert.equal(crew.guaranteed, true);
   assert.equal(crew.misses, 0);
   const loaded = JSON.parse(JSON.stringify(crew));
@@ -23,8 +24,11 @@ test('five-pull pity reaches S-rank; losing 50/50 guarantees the next S-rank', (
     return 0;
   });
   assert.equal(loaded.last.recruit, 'nim');
+  assert.equal(loaded.last.outcome, 'guaranteed');
   assert.equal(loaded.guaranteed, false);
   assert.deepEqual(loaded.owned, ['varren', 'mira', 'nim']);
+  drawRecruit(loaded, () => 0);
+  assert.deepEqual(loaded.last, { recruit: 'nim', duplicate: true, outcome: 'won' });
 });
 
 test('owned specialists alter future operations with their own roles', () => {

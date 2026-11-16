@@ -1,3 +1,4 @@
+import { createReveal, pullSummary } from './reveal';
 import './style.css';
 import type { mountWorld } from './world';
 import { conversation } from './story';
@@ -38,6 +39,7 @@ let dialogue: ReturnType<typeof conversation> | undefined;
 let line = 0;
 let marketView: 'shop' | 'wardrobe' = 'shop';
 const recruitArt = { nim, varren, mira };
+const reveal = createReveal();
 let crewSelection: CrewId = 'nim';
 
 el<HTMLImageElement>('select-male').src = male;
@@ -312,7 +314,10 @@ function renderCrew() {
 function openCrew() {
   if (!state) return;
   crewSelection = state.crew.active ?? state.crew.last?.recruit ?? state.recruitment.featured;
-  label('crew-result', state.mission === 'complete' ? '' : 'Finish The First Reserve for three signals.');
+  const lastPull = state.crew.last;
+  const member = state.recruitment.roster.find(item => item.id === lastPull?.recruit);
+  label('crew-result', lastPull && member ? pullSummary(member, lastPull) :
+    state.mission === 'complete' ? '' : 'Finish The First Reserve for three signals.');
   renderCrew();
   el<HTMLDialogElement>('crew-dialog').showModal();
 }
@@ -333,8 +338,8 @@ async function order(action: Action, recruit?: CrewId) {
     if (action === 'recruit' && next?.crew.last) {
       crewSelection = next.crew.last.recruit;
       const member = next.recruitment.roster.find(item => item.id === crewSelection)!;
-      label(status, next.crew.last.duplicate ? `${member.name} duplicate. Fragment credited.` :
-        `${member.rank}-rank ${member.name} joined the crew.`);
+      label(status, pullSummary(member, next.crew.last));
+      reveal.show(member, next.crew.last, recruitArt[member.id]);
     }
     if (action === 'assign-crew') label(status, 'Specialist assigned to future operations.');
     return true;

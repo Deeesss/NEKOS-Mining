@@ -313,7 +313,12 @@ test('browser plays without a wallet and pays NKS only at checkout', { timeout: 
     await expect(page.locator('#crew-signals')).toContainText('3 signals');
     await expect(page.locator('#crew-odds')).toContainText('50/50');
     await button('Recruit · 1 signal').click();
-    await expect(page.locator('#crew-result')).toContainText('joined the crew');
+    await expect(page.getByRole('region', { name: 'Recruitment result' })).toBeVisible();
+    await expect(button('Continue')).toBeVisible();
+    await expect(page.locator('#pull-detail')).toContainText('Joined the crew');
+    await screen('12-reveal');
+    await button('Continue').click();
+    await expect(page.locator('#crew-result')).toContainText('Joined the crew');
     await expect(page.locator('#crew-signals')).toContainText('2 signals');
     await button('Assign specialist').click();
     await expect(page.locator('#crew-benefit')).toContainText('Assigned.');
@@ -335,7 +340,41 @@ test('browser plays without a wallet and pays NKS only at checkout', { timeout: 
       await screen('11-relay-' + asset);
     }
     await button('Close').click();
+    const guarantee = new DatabaseSync(databasePath);
+    try {
+      guarantee.exec("UPDATE colonies SET state = json_set(state, '$.crew.misses', 4, '$.crew.guaranteed', json('true'))");
+    } finally {
+      guarantee.close();
+    }
+    await page.reload();
+    await button('Relay').click();
+    await button('Open relay').click();
+    await expect(page.locator('#crew-odds')).toContainText('Next S-rank is Nim');
+    await button('Recruit · 1 signal').click();
+    await expect(page.locator('#pull-reveal')).toHaveAttribute('data-rank', 'S');
+    await expect(button('Skip animation')).toBeVisible();
+    if (capture) {
+      await page.waitForFunction(() => Number(getComputedStyle(document.querySelector('.pull-signal')).opacity) > .65);
+      await screen('13-s-rank-charge');
+    }
+    await button('Skip animation').click();
+    await expect(page.locator('#pull-name')).toHaveText('Nim');
+    await expect(page.locator('#pull-outcome')).toHaveText('Featured guarantee used');
+    await page.locator('.pull-caption').evaluate(el => Promise.all(el.getAnimations().map(anim => anim.finished)));
+    await screen('14-s-rank-reveal');
+    await button('Continue').click();
+    await expect(page.locator('#pull-reveal')).toBeHidden();
+    await button('Close').click();
     await page.setViewportSize({ width: 390, height: 844 });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await button('Relay').click();
+    await button('Open relay').click();
+    await button('Recruit · 1 signal').click();
+    await expect(button('Continue')).toBeVisible();
+    await expect(button('Skip animation')).toBeHidden();
+    await screen('15-mobile-reveal');
+    await button('Continue').click();
+    await button('Close').click();
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth), 390);
     await screen('09-mobile');
     assert.deepEqual(errors, []);

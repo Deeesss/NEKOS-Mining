@@ -108,6 +108,20 @@
         <button id="crew-close">Close</button>
       </div>
     </div>
+    <section id="pull-reveal" aria-label="Recruitment result" hidden>
+      <div class="pull-signal" aria-hidden="true"><i></i><i></i><i></i></div>
+      <p id="pull-charge-label" aria-hidden="true"></p>
+      <div id="pull-card" hidden>
+        <img id="pull-art" alt="">
+        <div class="pull-caption" role="status">
+          <p id="pull-rank"></p>
+          <h3 id="pull-name"></h3>
+          <p id="pull-outcome"></p>
+          <p id="pull-detail"></p>
+        </div>
+      </div>
+      <button id="pull-action" type="button">Skip animation</button>
+    </section>
   </dialog>
   <script type="module" src="/frontier/client/main.ts"></script>
 </body>
