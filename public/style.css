@@ -1,0 +1,104 @@
+:root {
+  color-scheme: dark;
+  --page: #151210;
+  --surface: #211915;
+  --ink: #f7eee0;
+  --muted: #d4bcaa;
+  --accent: #ffb374;
+  --line: #624532;
+  font-family: Barlow, "Trebuchet MS", sans-serif;
+  background: var(--page);
+  color: var(--ink);
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; }
+a { color: var(--accent); text-underline-offset: .22em; }
+header, main { max-width: 74rem; margin-inline: auto; padding-inline: clamp(1rem, 4vw, 3rem); }
+header { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding-block: 1rem; min-height: 5rem; flex-wrap: wrap; }
+.brand { color: var(--ink); text-decoration: none; font-weight: 800; letter-spacing: .15em; }
+.brand span { color: var(--accent); font-size: .75em; }
+.wallet-bar { display: flex; align-items: center; flex-wrap: wrap; gap: .6rem; }
+#network { color: var(--muted); font-size: .9rem; }
+#network::before { content: ""; display: inline-block; width: .46rem; height: .46rem; margin-right: .45rem; border-radius: 50%; background: var(--accent); vertical-align: .08rem; }
+
+button {
+  min-height: 2.75rem;
+  border: 1px solid var(--line);
+  border-radius: .35rem;
+  background: #34251d;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 700;
+  padding: .55rem .9rem;
+  cursor: pointer;
+}
+button:hover:not(:disabled) { border-color: var(--accent); }
+button:disabled { cursor: default; color: #d0b9a8; background: #2a211c; }
+:focus-visible { outline: 2px solid #fff3dd; outline-offset: 4px; }
+button.primary:not(:disabled) { background: var(--accent); color: #28170d; }
+button.primary:hover:not(:disabled) { background: #ffd1a8; }
+
+.hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: .65rem;
+  min-height: 20rem;
+  display: flex;
+  align-items: flex-end;
+  background: #4b281c;
+}
+.landscape {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(ellipse at 79% 50%, #ad5a35, transparent 51%), linear-gradient(168deg, #2c1e22, #6b3429 55%, #a75a32);
+}
+.landscape::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, #1c1214f5, #2916188c 48%, transparent 80%); }
+.sun {
+  position: absolute;
+  width: clamp(6rem, 20vw, 13rem);
+  aspect-ratio: 1;
+  top: 12%;
+  right: 12%;
+  border-radius: 50%;
+  background: linear-gradient(#ffd19a, #d97845);
+  box-shadow: 0 0 5rem #f59a596a;
+}
+.ridge {
+  position: absolute;
+  inset: 50% 0 0 13%;
+  background: linear-gradient(162deg, #ba6e49, #542a20 70%);
+  clip-path: polygon(0 83%, 11% 74%, 27% 58%, 38% 67%, 55% 48%, 65% 34%, 75% 24%, 92% 35%, 100% 29%, 100% 100%, 0 100%);
+}
+.ridge.near {
+  inset: 61% 0 0;
+  background: linear-gradient(169deg, #a85d38, #261814 78%);
+  clip-path: polygon(0 94%, 15% 81%, 30% 71%, 45% 46%, 52% 44%, 67% 58%, 83% 55%, 100% 27%, 100% 100%, 0 100%);
+}
+.hero-copy { padding: clamp(1.3rem, 5vw, 4rem); }
+h1 { font-family: "Barlow Semi Condensed", "Trebuchet MS", sans-serif; font-size: clamp(3.1rem, 9vw, 7rem); line-height: .81; letter-spacing: -.055em; margin: 0; }
+h1 em { display: inline-block; margin-top: .12em; font-style: normal; color: var(--accent); }
+.hero p { margin: 1.1rem 0 0; max-width: 22rem; line-height: 1.5; }
+.stations { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-top: 1rem; }
+.station { min-width: 0; padding: clamp(1rem, 3vw, 1.6rem); border: 1px solid var(--line); border-radius: .55rem; background: var(--surface); }
+h2 { font-size: 1.4rem; margin: 0 0 .75rem; }
+.station p { color: var(--muted); line-height: 1.5; }
+progress { display: block; width: 100%; height: .65rem; margin-block: 1.25rem; accent-color: var(--accent); }
+dl { display: grid; gap: .6rem; margin: 0 0 1rem; }
+dl div { display: flex; justify-content: space-between; flex-wrap: wrap; gap: .25rem .75rem; }
+dt { color: var(--muted); }
+dd { margin: 0; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.station a { display: inline-block; padding-block: .35rem; }
+#token-link { margin-left: .5rem; }
+#transaction { margin-bottom: 0; }
+#tx-hash { display: block; overflow-wrap: anywhere; }
+#status { min-height: 2.5rem; padding-bottom: 1rem; color: var(--accent); line-height: 1.5; }
+@media (max-width: 40rem) {
+  .stations { grid-template-columns: 1fr; }
+  header { align-items: flex-start; }
+  .wallet-bar { gap: .4rem; }
+  .landscape::after { background: linear-gradient(90deg, #1c1214e8, #29161881 62%, transparent); }
+}

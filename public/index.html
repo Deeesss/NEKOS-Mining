@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Work a mining shift and claim testnet NKS in NEKOS Mining.">
+  <title>NEKOS Mining</title>
+  <link rel="stylesheet" href="/style.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <header>
+    <a class="brand" href="/">NEKOS <span>MINING</span></a>
+    <div class="wallet-bar">
+      <span id="network">Connecting</span>
+      <button id="wallet" type="button" disabled>Connect wallet</button>
+      <button id="logout" type="button" hidden>Sign out</button>
+    </div>
+  </header>
+  <main>
+    <section class="hero" aria-labelledby="title">
+      <div class="landscape" aria-hidden="true"><div class="sun"></div><div class="ridge"></div><div class="ridge near"></div></div>
+      <div class="hero-copy">
+        <h1 id="title">NEKOS<br><em>Mining</em></h1>
+        <p>Work the spice fields. Convert completed shifts into testnet NKS.</p>
+      </div>
+    </section>
+    <div class="stations">
+      <section class="station" aria-labelledby="mining-heading">
+        <h2 id="mining-heading">Extraction rig</h2>
+        <p id="shift-status">Connect your wallet to start a shift.</p>
+        <progress id="shift" aria-label="Mining shift progress" value="0" max="60"></progress>
+        <button id="start" class="primary" type="button" disabled>Start mining</button>
+      </section>
+      <section class="station" aria-labelledby="rewards-heading">
+        <h2 id="rewards-heading">Spice vault</h2>
+        <dl>
+          <div><dt>Spice points</dt><dd id="points">—</dd></div>
+          <div><dt>Available to claim</dt><dd id="claimable">—</dd></div>
+          <div id="reserved-row" hidden><dt>Reserved for claim</dt><dd id="reserved"></dd></div>
+          <div><dt>Wallet balance</dt><dd id="balance">—</dd></div>
+        </dl>
+        <button id="claim" type="button" disabled>Claim NKS</button>
+        <p id="transaction" hidden><span id="tx-status"></span> <a id="tx-link" target="_blank" rel="noopener noreferrer" hidden>View transaction</a><code id="tx-hash" hidden></code></p>
+        <a id="token-link" target="_blank" rel="noopener noreferrer" hidden>Token contract</a>
+      </section>
+    </div>
+    <p id="status" role="status" aria-live="polite"></p>
+  </main>
+</body>
+</html>
