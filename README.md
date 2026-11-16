@@ -16,7 +16,7 @@ Open http://127.0.0.1:3000. Choose a protagonist and name, then accept Commander
 1. Open **Hangar → Open desert map** and **Dispatch harvester**. The expedition takes 28 seconds and brings back 1,000 RAW SPICE.
 2. Open **Refinery → Start refining**. Processing takes 10 seconds. The batch adds 700 REFINED SPICE to the silo when there is room.
 3. Return to **Command** and report the 500-unit delivery to Iona.
-4. In **Silo**, spend 150 REFINED SPICE to expand capacity from 900 to 1,600. Open the wardrobe at **Command** to equip Duskwear.
+4. In **Silo**, spend 150 REFINED SPICE to expand capacity from 900 to 1,600. Open **Market → Open market** to preview Duskwear. After the mission, buy it for 100 REFINED SPICE and equip it in the Market’s **Wardrobe**.
 
 The server stores the profile, mission, outfit and production state in `data/frontier.sqlite`. The browser keeps the guest session in an HTTP-only cookie. Return using the same browser profile and origin. Clearing the cookie removes access to that save. The same database and browser session restore progress after a server restart.
 
@@ -32,7 +32,7 @@ npm test
 npm run check:secrets
 ```
 
-Set `NKS_BROWSER_CHANNEL=chrome` to use installed Chrome. The browser test covers the complete mission without a wallet. The economy test covers session isolation, duplicate orders, full silo handling, inventory reconciliation and wardrobe authorization. Set `NKS_FRONTIER_REAL_TIME=1` to use the real CLI and production time intervals. Set `NKS_FRONTIER_SCREENSHOTS=test-results/frontier` to capture the browser flow.
+Set `NKS_BROWSER_CHANNEL=chrome` to use installed Chrome. The browser test covers the complete mission without a wallet. The economy test covers session isolation, duplicate orders, full silo handling, inventory reconciliation outfit purchase replay prevention, and wardrobe ownership. Set `NKS_FRONTIER_REAL_TIME=1` to use the real CLI and production time intervals. Set `NKS_FRONTIER_SCREENSHOTS=test-results/frontier` to capture the browser flow.
 
 The [earlier wallet prototype](docs/WALLET-PROTOTYPE.md) is available through its own entry point. Frontier saves live in a separate SQLite file and create no on-chain reward authorizations. Use distinct ports when running both servers.
 

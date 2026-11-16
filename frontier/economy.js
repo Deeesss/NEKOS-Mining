@@ -3,7 +3,8 @@ export const rules = Object.freeze({
   rawCapacity: 1000,
   refineSeconds: 10,
   yieldPercent: 70,
-  target: 500
+  target: 500,
+  duskwearPrice: 100
 });
 
 export class GameError extends Error {
@@ -18,7 +19,7 @@ const upgradeCost = level => 150 + 100 * (level - 1);
 const seconds = n => n * 1000;
 
 export function createColony(protagonist, name) {
-  return { protagonist, name, outfit: 'field', revision: 0, mission: 'briefing', raw: 0, refined: 0, delivered: 0, level: 1, flight: null, batch: null };
+  return { protagonist, name, outfit: 'field', ownsDuskwear: false, revision: 0, mission: 'briefing', raw: 0, refined: 0, delivered: 0, level: 1, flight: null, batch: null };
 }
 
 export function settle(colony, now, record) {
@@ -81,9 +82,17 @@ export function command(colony, action, now, record) {
       record('silo_upgraded', now, 0, -cost);
       return;
     }
+    case 'buy-dusk':
+      if (colony.ownsDuskwear) throw new GameError('Duskwear is already in your wardrobe.');
+      if (colony.mission !== 'complete') throw new GameError('Complete The First Reserve to buy Duskwear.');
+      if (colony.refined < rules.duskwearPrice) throw new GameError('The silo needs more REFINED SPICE to buy Duskwear.');
+      colony.refined -= rules.duskwearPrice;
+      colony.ownsDuskwear = true;
+      record('duskwear_purchased', now, 0, -rules.duskwearPrice);
+      return;
     case 'field':
     case 'dusk':
-      if (action === 'dusk' && colony.level < 2) throw new GameError('Expand the silo to unlock Duskwear.');
+      if (action === 'dusk' && !colony.ownsDuskwear) throw new GameError('Buy Duskwear from the Market first.');
       colony.outfit = action;
       return;
     default:

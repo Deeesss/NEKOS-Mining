@@ -8,7 +8,7 @@
 **Repozitár:** [https://github.com/Deeesss/NEKOS-Mining](https://github.com/Deeesss/NEKOS-Mining)\
 **Pracovná vetva:** `feat/nks-rebirth`
 
-**Spresnenie etapy 1:** Emberwell je kolóniové RPG. Po dodávke 500 čistého SPICE môže hráč investovať zásoby do rozšírenia sila. Prvé rozšírenie sprístupní Duskwear pre oboch protagonistov. Profil funguje bez peňaženky. Obchod za internú menu patrí do etapy 2. Existujúci Web3 prototyp sa spúšťa samostatne. Base Sepolia ostáva etapou 3.
+**Spresnenie etapy 1:** Emberwell je kolóniové RPG. Po dodávke 500 čistého SPICE môže hráč investovať zásoby do rozšírenia sila. Samostatný Market ponúkne náhľad a predaj Duskwear pre oboch protagonistov za 100 čistého SPICE po prvej misii. Hráč si zakúpený outfit oblečie v záložke Wardrobe v Markete. Profil funguje bez peňaženky. Obchod za internú menu patrí do etapy 2. Existujúci Web3 prototyp sa spúšťa samostatne. Base Sepolia ostáva etapou 3.
 
 ---
 
@@ -480,7 +480,7 @@ Výšku cien, produkčných nákladov a ekonomických kurzov určuj ako konfigur
 - Rozširovať skladovanie.
 - Odomykať ďalšie expedície.
 
-Prvá etapa používa priamu investíciu čistého SPICE do zvýšenia kapacity sila. Prvý obchod s definovanou cenou patrí do etapy 2.
+Prvá etapa používa priamu investíciu čistého SPICE do zvýšenia kapacity sila. Market v prvej etape predáva Duskwear za čistý SPICE. Všeobecný obchod so surovinami za internú menu patrí do etapy 2.
 
 Pokročilý dynamický trh, kontrakty medzi hráčmi a burza patria do ďalších etáp.
 
@@ -899,7 +899,7 @@ Dodať:
 18. Prvú úlohu s cieľom 500 jednotiek REFINED SPICE.
 19. Perzistentné uloženie stavu.
 20. Automatizované testy ekonomického cyklu.
-21. Prvé rozšírenie mesta za REFINED SPICE a zmena odomknutého outfitu vo veliteľstve.
+21. Prvé rozšírenie mesta za REFINED SPICE a kúpa a oblečenie Duskwear v samostatnom Markete.
 
 **Výsledok:** hráč prejde celú prvú misiu od výberu postavy až po uloženie čistého SPICE do sila.
 

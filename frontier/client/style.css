@@ -96,4 +96,8 @@ dialog img { width: 100%; height: clamp(14rem, 67vh, 36rem); object-fit: cover; 
   dialog[open] { grid-template-columns: 1fr; }
   dialog img { height: min(39vh, 17rem); border-right: none; }
 }
-#wardrobe img { object-fit: contain; background: #191713; }
+#market-dialog img { object-fit: contain; background: #191713; }
+.market nav { margin-block: .7rem 1rem; }
+.market h3 { margin: 0; }
+.market p { margin-block: .5rem .65rem; }
+#market-feedback { color: var(--hot); min-height: 1.45rem; }

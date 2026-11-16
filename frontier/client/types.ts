@@ -1,8 +1,8 @@
-export type Place = 'command' | 'hangar' | 'refinery' | 'silo' | 'deposit';
+export type Place = 'command' | 'hangar' | 'refinery' | 'silo' | 'market' | 'deposit';
 export type View = 'city' | 'desert';
 export type Protagonist = 'male' | 'female';
 export type Outfit = 'field' | 'dusk';
-export type Action = 'accept' | 'dispatch' | 'refine' | 'report' | 'upgrade' | 'field' | 'dusk';
+export type Action = 'accept' | 'dispatch' | 'refine' | 'report' | 'upgrade' | 'field' | 'dusk' | 'buy-dusk';
 
 export interface Flight {
   launchedAt: number;
@@ -15,6 +15,7 @@ export interface Flight {
 export interface Colony {
   protagonist: Protagonist;
   outfit: Outfit;
+  ownsDuskwear: boolean;
   name: string;
   revision: number;
   mission: 'briefing' | 'active' | 'complete';
@@ -33,5 +34,6 @@ export interface Colony {
     refineSeconds: number;
     yieldPercent: number;
     target: number;
+    duskwearPrice: number;
   };
 }

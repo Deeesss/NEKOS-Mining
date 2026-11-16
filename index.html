@@ -74,12 +74,22 @@
     </div>
   </dialog>
 
-  <dialog id="wardrobe" aria-labelledby="wardrobe-title">
+  <dialog id="market-dialog" aria-labelledby="market-title">
     <img id="outfit-preview" alt="">
-    <div class="dialogue">
-      <h2 id="wardrobe-title">Steward’s quarters</h2>
-      <p>Choose what to wear around Emberwell.</p>
-      <div class="dialogue-actions"><button id="field-outfit">Field uniform</button><button id="dusk-outfit">Duskwear</button><button id="wardrobe-close">Close</button></div>
+    <div class="dialogue market">
+      <h2 id="market-title">Emberwell Market</h2>
+      <nav aria-label="Market view"><button id="market-shop" aria-pressed="true">Shop</button><button id="market-wardrobe" aria-pressed="false">Wardrobe</button></nav>
+      <div id="shop-panel">
+        <h3>Duskwear</h3>
+        <p id="shop-detail"></p>
+        <button id="buy-dusk" class="primary">Buy Duskwear</button>
+      </div>
+      <div id="wardrobe-panel" hidden>
+        <p id="wardrobe-detail"></p>
+        <div class="dialogue-actions"><button id="field-outfit">Field uniform</button><button id="dusk-outfit">Duskwear</button></div>
+      </div>
+      <p id="market-feedback" role="status"></p>
+      <button id="market-close">Close</button>
     </div>
   </dialog>
   <script type="module" src="/frontier/client/main.ts"></script>

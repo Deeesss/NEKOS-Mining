@@ -70,6 +70,8 @@ export function openColonyStore(path) {
         const row = lookup.get(digest(token));
         if (!row) return null;
         const colony = JSON.parse(row.state);
+        // Older saves unlocked Duskwear at level two.
+        colony.ownsDuskwear ??= colony.level >= 2;
         const record = (...event) => add.run(row.id, ...event);
         settle(colony, now, record);
         if (request) {

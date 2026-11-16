@@ -16,7 +16,7 @@ const numbers = new Intl.NumberFormat('en');
 const int = (n: number) => numbers.format(n);
 const portraits = { male: { field: male, dusk: maleDusk }, female: { field: female, dusk: femaleDusk } };
 const locations: Record<Place, string> = {
-  command: 'Command', hangar: 'Hangar', refinery: 'Refinery', silo: 'Silo', deposit: 'Glass Basin'
+  command: 'Command', hangar: 'Hangar', refinery: 'Refinery', silo: 'Silo', market: 'Market', deposit: 'Glass Basin'
 };
 
 let state: Colony | null = null;
@@ -32,6 +32,7 @@ let online = false;
 let ready = false;
 let dialogue: ReturnType<typeof conversation> | undefined;
 let line = 0;
+let marketView: 'shop' | 'wardrobe' = 'shop';
 
 el<HTMLImageElement>('select-male').src = male;
 el<HTMLImageElement>('select-female').src = female;
@@ -140,7 +141,11 @@ function panel(colony: Colony) {
       description = 'Commander Iona oversees the settlement’s mining operation.';
       detail = colony.mission === 'complete' ? 'Expansion plans unlocked' : 'Mission · The First Reserve';
       actions = [{ name: report ? 'Report to Commander Iona' : 'Talk to Commander Iona', run: openConversation, enabled: can }];
-      if (colony.level >= 2) actions.push({ name: 'Open wardrobe', run: openWardrobe });
+      break;
+    case 'market':
+      description = 'Trade REFINED SPICE for clothing made in Emberwell.';
+      detail = colony.ownsDuskwear ? 'Duskwear in your wardrobe' : `Duskwear · ${int(colony.rules.duskwearPrice)} REFINED SPICE`;
+      actions = [{ name: 'Open market', run: openMarket }];
       break;
     case 'hangar':
       description = 'H-01 can carry one load from the Glass Basin. Track it on the desert map.';
@@ -216,10 +221,11 @@ function render() {
   label('refined', int(colony.refined) + ' / ' + int(colony.capacity));
   label('silo-level', colony.level);
   label('objective', int(Math.min(colony.rules.target, colony.delivered)) + ' / ' + int(colony.rules.target));
-  const places: Place[] = view === 'city' ? ['command', 'hangar', 'refinery', 'silo'] : ['deposit'];
+  const places: Place[] = view === 'city' ? ['command', 'hangar', 'refinery', 'silo', 'market'] : ['deposit'];
   buttons('places', places.map(key => ({ name: locations[key], run: () => setPlace(key) })));
   places.forEach((key, index) => el('places').children[index].setAttribute('aria-pressed', String(key === place)));
   panel(colony);
+  if (el<HTMLDialogElement>('market-dialog').open) renderMarket();
 }
 
 function renderDialogue() {
@@ -236,31 +242,49 @@ function openConversation() {
   el<HTMLDialogElement>('conversation').showModal();
 }
 
-function renderWardrobe() {
+function renderMarket() {
   if (!state) return;
-  el<HTMLImageElement>('outfit-preview').src = portraits[state.protagonist][state.outfit];
+  const owned = state.ownsDuskwear;
+  const shop = marketView === 'shop';
+  const cost = state.rules.duskwearPrice;
+  el<HTMLImageElement>('outfit-preview').src = portraits[state.protagonist][shop ? 'dusk' : state.outfit];
+  pressed('market-shop', shop);
+  pressed('market-wardrobe', !shop);
+  show('shop-panel', shop);
+  show('wardrobe-panel', !shop);
+  label('shop-detail', owned ? 'Already in your wardrobe.' :
+    `${int(cost)} REFINED SPICE · ${state.mission === 'complete' ? int(state.refined) + ' in your silo' : 'Available after The First Reserve'}`);
+  label('wardrobe-detail', owned ? 'Choose what to wear around Emberwell.' : 'Buy Duskwear from the shop to add it here.');
+  show('buy-dusk', !owned);
+  el<HTMLButtonElement>('buy-dusk').disabled = busy || !online || state.mission !== 'complete' || state.refined < cost;
+  el<HTMLButtonElement>('field-outfit').disabled = busy || !online;
+  el<HTMLButtonElement>('dusk-outfit').disabled = busy || !online || !owned;
   pressed('field-outfit', state.outfit === 'field');
   pressed('dusk-outfit', state.outfit === 'dusk');
 }
 
-function openWardrobe() {
-  renderWardrobe();
-  el<HTMLDialogElement>('wardrobe').showModal();
+function openMarket() {
+  marketView = 'shop';
+  label('market-feedback', '');
+  renderMarket();
+  el<HTMLDialogElement>('market-dialog').showModal();
 }
 
 async function order(action: Action) {
   if (!state || busy) return false;
   busy = true;
-  label('feedback', '');
+  const status = el<HTMLDialogElement>('market-dialog').open ? 'market-feedback' : 'feedback';
+  label(status, '');
   render();
   try {
     const next = await request('/command', { action, revision: state.revision, site: state.rules.site.id });
     receive(next);
-    if (action === 'upgrade' && next) label('feedback', next.level === 2 ? 'Silo expanded. Duskwear unlocked at Command.' : 'Silo capacity expanded.');
+    if (action === 'upgrade') label(status, 'Silo capacity expanded.');
+    if (action === 'buy-dusk') label(status, 'Duskwear added to your wardrobe.');
     if (action === 'report') label('feedback', 'Mission complete. Colony upgrades unlocked.');
     return true;
   } catch (error) {
-    label('feedback', error instanceof Error ? error.message : 'Order failed.');
+    label(status, error instanceof Error ? error.message : 'Order failed.');
     return false;
   } finally {
     busy = false;
@@ -296,9 +320,14 @@ el('dialogue-next').onclick = async () => {
   }
 };
 el('dialogue-close').onclick = () => el<HTMLDialogElement>('conversation').close();
-el('wardrobe-close').onclick = () => el<HTMLDialogElement>('wardrobe').close();
+el('market-close').onclick = () => el<HTMLDialogElement>('market-dialog').close();
+el('market-shop').onclick = () => { marketView = 'shop'; renderMarket(); };
+el('market-wardrobe').onclick = () => { marketView = 'wardrobe'; renderMarket(); };
+el('buy-dusk').onclick = async () => {
+  if (await order('buy-dusk')) el('market-wardrobe').focus();
+};
 async function equip(outfit: Outfit) {
-  if (state?.outfit !== outfit && await order(outfit)) renderWardrobe();
+  if (state?.outfit !== outfit && await order(outfit)) renderMarket();
 }
 el('field-outfit').onclick = () => void equip('field');
 el('dusk-outfit').onclick = () => void equip('dusk');

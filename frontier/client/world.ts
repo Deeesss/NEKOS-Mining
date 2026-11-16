@@ -7,7 +7,7 @@ const iso = (column: number, row: number) => point(240 + (column - row) * 22, 13
 const blend = (a: Point, b: Point, n: number) => point(Math.round(a.x + (b.x - a.x) * n), Math.round(a.y + (b.y - a.y) * n));
 const progress = (now: number, start: number, end: number) => Phaser.Math.Clamp((now - start) / (end - start), 0, 1);
 const spots = {
-  command: iso(-3, -2), hangar: iso(-2, 2), refinery: iso(3, -2), silo: iso(2, 3), deposit: point(369, 104)
+  command: iso(-3, -2), hangar: iso(-2, 2), refinery: iso(3, -2), silo: iso(2, 3), market: iso(-5, 0), deposit: point(369, 104)
 };
 const camp = point(100, 201);
 const bend = point(252, 152);
@@ -50,7 +50,7 @@ class FrontierScene extends Phaser.Scene {
       if (this.dragged || !this.down) return;
       this.down = undefined;
       const p = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
-      const places: Place[] = this.view === 'city' ? ['command', 'hangar', 'refinery', 'silo'] : ['deposit'];
+      const places: Place[] = this.view === 'city' ? ['command', 'hangar', 'refinery', 'silo', 'market'] : ['deposit'];
       const found = places.find(place => Math.abs(spots[place].x - p.x) < 37 &&
         p.y > spots[place].y - 41 && p.y < spots[place].y + 18);
       if (found) this.pick(found);
@@ -129,10 +129,18 @@ class FrontierScene extends Phaser.Scene {
       }
     }
 
-    for (const p of [iso(-5, -3), iso(-5, 0), iso(4, -4), iso(5, 0), iso(5, 2)]) {
+    for (const p of [iso(-5, -3), iso(4, -4), iso(5, 0), iso(5, 2)]) {
       this.box(g, p, 16, 9, 0x957d68, [0x625249, 0x463d39]);
       g.fillStyle(0xc4a885).fillRect(p.x - 5, p.y - 12, 10, 2);
     }
+    this.box(g, spots.market, 24, 13, 0xad755c, [0x826145, 0x514039]);
+    g.fillStyle(0xd79d68).fillPoints(diamond(point(spots.market.x, spots.market.y - 18), 24, 11), true);
+    g.fillStyle(0x4f8075).fillPoints([
+      point(spots.market.x, spots.market.y - 29), point(spots.market.x + 7, spots.market.y - 16),
+      point(spots.market.x - 9, spots.market.y - 9), point(spots.market.x - 15, spots.market.y - 14)
+    ], true);
+    g.fillStyle(0xffd48a).fillRect(spots.market.x + 3, spots.market.y - 3, 9, 3);
+
     this.box(g, spots.command, 32, 24, 0x788d85, [0x514d43, 0x34484b]);
     this.box(g, point(spots.command.x - 5, spots.command.y - 20), 13, 10, 0xa2a89a, [0x716b55, 0x445450]);
     g.fillStyle(0xadd8cc).fillRect(spots.command.x - 8, spots.command.y - 41, 2, 15);
